@@ -9,9 +9,11 @@
 #define RFM95_RST 4
 #define RFM95_INT 3  
 
-// LED Pins
+// I/O Pins
 #define RED_LED_PIN A0
 #define GREEN_LED_PIN A1
+#define VBAT_PIN A7
+#define NOISE_SEED_PIN A4
 
 // Packet constants
 #define PACKET_SIZE_BYTES 16
@@ -27,17 +29,17 @@
 #define SERIAL_DEBUG true
 #define Console SerialUSB
 #define DISABLE_STANDBY true
-#define SIMULATE_PACKET false
+#define SIMULATE_PACKET true
 
 // Network defining the beacon ID's
-const uint8_t Basestation = 1;
-const uint8_t Beacon1 = 2;
-const uint8_t Beacon2 = 3;
-const uint8_t Beacon3 = 4;
-const uint8_t Beacon4 = 5;
+const uint16_t Basestation = 1;
+const uint16_t Beacon1 = 2;
+const uint16_t Beacon2 = 3;
+const uint16_t Beacon3 = 4;
+const uint16_t Beacon4 = 5;
 
 // Radio configurations
-const uint8_t MyAddress = Beacon1; // Change beacon number depending on beacon used.
+const uint16_t MyAddress = Beacon1; // Change beacon number depending on beacon used.
 const float Frequency = 915.0;
 const int8_t TxPower = 7;
 
@@ -87,12 +89,7 @@ void setup() {
   if (!SIMULATE_PACKET) {
     serialLog("Waiting for GPS lock...");
     while (!gps.location.isValid()) {
-      while (Serial1.available() > 0) {
-        gps.encode(Serial1.read());
-      }
-
-      toggleLED(GREEN_LED_PIN);
-      delay(1000);
+      waitingForLock();
     }
     serialLog("GPS obtained lock");
   }
@@ -100,14 +97,125 @@ void setup() {
   else {
     serialLog("Skipping GPS lock");
   }
+
+  //set random seed using noise from analoge
+  uint32_t noise = analogRead(NOISE_SEED_PIN);
+  randomSeed(noise);
+  serialLogInteger("Setting random seed with noise:", noise);
+
+  serialLog("Setup Complete\n");
 }
 
 uint8_t message[PACKET_SIZE_BYTES];
 int8_t messageID = 0;
 
 void loop() {
+  encodeMessage();
+  manager.sendto((uint8_t *)message, PACKET_SIZE_BYTES, Basestation);
   toggleLED(GREEN_LED_PIN);
-  delay(500);
+  delay(10);
+  toggleLED(GREEN_LED_PIN);
+  uint16_t waitTime =  random(SLEEP_TIME - SLEEP_TIME_VARIANCE, SLEEP_TIME + SLEEP_TIME_VARIANCE);
+  serialLogInteger("Waiting for", waitTime);
+  smartDelay(waitTime);
+}
+
+// Delay function that can read incoming GPS information during the delay time
+static void smartDelay(uint16_t ms)
+{
+  unsigned long start = millis();
+  while ((millis() - start) < ms)
+  {
+    //get data from GPS
+    while (Serial1.available() > 0)
+    {
+      gps.encode(Serial1.read());
+    }
+  }
+}
+
+void waitingForLock() {
+  toggleLED(GREEN_LED_PIN);
+  smartDelay(1000);
+  toggleLED(GREEN_LED_PIN);
+  smartDelay(1000);
+}
+
+void encodeMessage() {
+  /*
+  packet structure:
+  - 16 bit radio ID
+  - 1 bit panic state
+  - 7 bit message ID
+  - 32 bit latitude
+  - 32 bit longitude
+  - 8 bit battery life
+  - 32 bit UTC
+
+  Total size: 128 bits or 16 bytes
+  */
+
+  int byteIndex = 0;
+
+  bool panicState = true;
+  float gpsLat = 100.;
+  float gpsLong = 200.;
+  uint8_t batteryPercent = 50;
+  int32_t utc = now();
+
+  if (!SIMULATE_PACKET) {
+    // TODO: override simulated packet numbers here if using GPS
+  }
+
+  // Log packet before sending
+  serialLogInteger("Radio ID:", MyAddress);
+  serialLogInteger("Panic State:", panicState);
+  serialLogInteger("Message ID:", messageID);
+  serialLogDouble("GPS latitude:", gpsLat);
+  serialLogDouble("GPS longitude:", gpsLong);
+  serialLogInteger("Battery Percent:", batteryPercent);
+  serialLogInteger("Timestamp:", utc);
+
+  // encode radio ID
+  for (int i=sizeof(MyAddress)-1; i>=0; i--)
+  {
+    //cast data to byte array then get byte by index
+    message[byteIndex] = ((uint8_t*)&MyAddress)[i];
+    byteIndex++;
+  }
+
+  // encode panicState and messageID
+  uint8_t panicMask = panicState ? 0b10000000 : 0b00000000;
+  message[byteIndex] = messageID | panicMask;
+  byteIndex++;
+
+  // encode gpsLat
+  for (int i = sizeof(gpsLat)-1; i>=0; i--)
+  {
+    //cast data to byte array then get byte by index
+    message[byteIndex] = ((uint8_t*)&gpsLat)[i];
+    byteIndex++;
+  }
+
+  // encode gpsLong
+  for (int i = sizeof(gpsLong)-1; i>=0; i--)
+  {
+    //cast data to byte array then get byte by index
+    message[byteIndex] = ((uint8_t*)&gpsLong)[i];
+    byteIndex++;
+  }
+
+  // encode batteryPercent
+  message[byteIndex] = batteryPercent;
+  byteIndex++;
+
+  // encode utc
+  for (int i = sizeof(utc)-1; i>=0; i--)
+  {
+    //cast data to byte array then get byte by index
+    message[byteIndex] = ((uint8_t*)&utc)[i];
+    byteIndex++;
+  }
 }
 
 void toggleLED(int LED_PIN) {
@@ -127,5 +235,15 @@ void serialLogInteger(String prefix, long intValue)
     Console.print(prefix);
     Console.print(" ");
     Console.println(intValue);
+  }
+}
+
+void serialLogDouble(String prefix, double decimalValue)
+{
+  if (SERIAL_DEBUG)
+  {
+    Console.print(prefix);
+    Console.print(" ");
+    Console.println(decimalValue);
   }
 }
