@@ -106,12 +106,18 @@ void setup() {
   serialLog("Setup Complete\n");
 }
 
-uint8_t message[PACKET_SIZE_BYTES];
+byte message[PACKET_SIZE_BYTES];
 int8_t messageID = 0;
 
 void loop() {
   encodeMessage();
-  manager.sendto((uint8_t *)message, PACKET_SIZE_BYTES, Basestation);
+  for (int i = 0; i < sizeof(message); i++) {
+    Console.print(message[i], BIN);
+    Console.print(" ");
+  }
+  Console.println();
+  manager.sendtoWait((uint8_t *)message, PACKET_SIZE_BYTES, Basestation);
+  messageID++;
   toggleLED(GREEN_LED_PIN);
   delay(10);
   toggleLED(GREEN_LED_PIN);
@@ -143,10 +149,10 @@ void waitingForLock() {
 
 void encodeMessage() {
   /*
-  packet structure:
-  - 16 bit radio ID
+  NEW packet structure:
+  - 8 bit radio ID
   - 1 bit panic state
-  - 7 bit message ID
+  - 15 bit message ID
   - 32 bit latitude
   - 32 bit longitude
   - 8 bit battery life
@@ -154,6 +160,8 @@ void encodeMessage() {
 
   Total size: 128 bits or 16 bytes
   */
+
+  // NOTE: The new packet structure hasn't been implemented. The current packet structure is still 16 bit Radio ID and 7 bit message ID
 
   int byteIndex = 0;
 
