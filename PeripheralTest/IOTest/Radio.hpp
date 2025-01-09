@@ -3,12 +3,13 @@
 * Author: S25-08
 */
 
-#ifndef Radio_H
-#define Radio_H
+#ifndef RADIO_H
+#define RADIO_H
 
-//includes
+// Includes
 #include <RH_RF95.h>
 #include <RHMesh.h>
+#include "LED.hpp"
 
 // These are the pins for the radio module on the Adafruit feather m0
 #define RFM95_CS 8
@@ -26,7 +27,7 @@ RHMesh manager(driver);
 // Initializes radio and configure the frequency and tx power
 void initRadio() {
   if (!manager.init()) {
-    digitalWrite(LED_BUILTIN, HIGH);
+    turnOnLED(LED_BUILTIN);
     while (true) {}
   }
 

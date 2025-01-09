@@ -5,30 +5,34 @@
 
 // includes
 #include "IOTest/IOTest.hpp"
+#include "Debug.hpp"
 
-
-// Baud rate constants
-#define DEBUG_BAUD 9600
-#define GPS_BAUD 38400 // This baud rate is variable depending on the GPS module
-
-// Debug
-#define SKIP_GPS_TEST true
-#define Console SerialUSB
-
+// Initializes debug serial and IOs
 void setup() {
-  // Serial setups
-  Serial1.begin(GPS_BAUD);
-  Console.begin(DEBUG_BAUD);
-  while (!Console) {}
-  Console.println("Serials Initialized");
-
-  // GPS setup
-  if (!SKIP_GPS_TEST) {
-    // TODO: setup GPS test and obtain lock
-  }
-
+  initDebug(true); // Set parameter to false if you don't want to enable console outputs or test GPS
   initIO();
 }
 
+// Loop tests GPS functionality
 void loop() {
+  // Updates GPS
+  while (Serial1.available() > 0)
+  {
+    gps.encode(Serial1.read());
+  }
+
+  if (gps.location.isValid()) {
+    serialLogDouble("GPS latitude:", gps.location.lat());
+    serialLogDouble("GPS longitude:", gps.location.lng());
+    serialLog("\n");
+  }
+
+  else {
+    turnOnLED(LED_BUILTIN);
+    delay(10);
+    turnOffLED(LED_BUILTIN);
+    delay(10);
+  }
+
+  delay(5000);
 }
