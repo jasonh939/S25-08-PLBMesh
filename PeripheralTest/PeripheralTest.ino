@@ -1,28 +1,17 @@
 /*
 * Filename: PeripheralTest.ino
 * Author: S25-08
-* Description: This file is used to test the peripherals 
-* for the beacons.
 */
 
 // includes
 #include <RH_RF95.h>
 #include <RHMesh.h>
+#include "IOTest/IOTest.hpp"
 
 // Radio Pins
 #define RFM95_CS 8
 #define RFM95_RST 4
 #define RFM95_INT 3  
-
-// LED Pins
-#define RED_LED_PIN A0
-#define YEL_LED_PIN A1
-#define GRE_LED_PIN A2
-
-// Button Pins
-#define BUTTON_1_PIN 12
-#define BUTTON_2_PIN 11
-#define BUTTON_3_PIN 10
 
 // Baud rate constants
 #define DEBUG_BAUD 9600
@@ -46,17 +35,6 @@ void setup() {
   while (!Console) {}
   Console.println("Serials Initialized");
 
-  // LED setups
-  pinMode(RED_LED_PIN, OUTPUT);
-  pinMode(YEL_LED_PIN, OUTPUT);
-  pinMode(GRE_LED_PIN, OUTPUT);
-  pinMode(LED_BUILTIN, OUTPUT);
-
-  digitalWrite(RED_LED_PIN, LOW);
-  digitalWrite(YEL_LED_PIN, LOW);
-  digitalWrite(GRE_LED_PIN, LOW);
-  digitalWrite(LED_BUILTIN, LOW);
-
   // Radio setup
   pinMode(RFM95_RST, OUTPUT);
   digitalWrite(RFM95_RST, LOW);
@@ -73,31 +51,13 @@ void setup() {
   }
   Console.println("Radio setup complete");
 
-  // Button setups
-  pinMode(BUTTON_1_PIN, INPUT);
-  digitalWrite(RED_LED_PIN, digitalRead(BUTTON_1_PIN));
-  digitalWrite(YEL_LED_PIN, digitalRead(BUTTON_2_PIN));
-  digitalWrite(GRE_LED_PIN, digitalRead(BUTTON_3_PIN));
-  attachInterrupt(digitalPinToInterrupt(BUTTON_1_PIN), BUTTON_1_CHANGE, CHANGE);
-  attachInterrupt(digitalPinToInterrupt(BUTTON_2_PIN), BUTTON_2_CHANGE, CHANGE);
-  attachInterrupt(digitalPinToInterrupt(BUTTON_3_PIN), BUTTON_3_CHANGE, CHANGE);
+  // GPS setup
+  if (!SKIP_GPS_TEST) {
+    // TODO: setup GPS test and obtain lock
+  }
+
+  initIO();
 }
 
 void loop() {
-}
-
-void toggleLED(int LED_PIN) {
-  digitalWrite(LED_PIN, !digitalRead(LED_PIN));
-}
-
-void BUTTON_1_CHANGE() {
-  toggleLED(RED_LED_PIN);
-}
-
-void BUTTON_2_CHANGE() {
-  toggleLED(YEL_LED_PIN);
-}
-
-void BUTTON_3_CHANGE() {
-  toggleLED(GRE_LED_PIN);
 }

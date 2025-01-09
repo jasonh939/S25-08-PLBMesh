@@ -31,6 +31,10 @@
 #define DISABLE_STANDBY true
 #define SIMULATE_PACKET true
 
+// Function blueprints
+void serialLogInteger(String prefix, long intValue, String suffix = "");
+void serialLogDouble(String prefix, double decimalValue, String suffix = "");
+
 // Network defining the beacon ID's
 const uint16_t Basestation = 1;
 const uint16_t Beacon1 = 2;
@@ -236,22 +240,24 @@ void serialLog(String message) {
   }
 }
 
-void serialLogInteger(String prefix, long intValue)
+void serialLogInteger(String prefix, long intValue, String suffix)
 {
   if (SERIAL_DEBUG)
   {
     Console.print(prefix);
     Console.print(" ");
-    Console.println(intValue);
+    Console.print(intValue);
+    Console.println(suffix);
   }
 }
 
-void serialLogDouble(String prefix, double decimalValue)
+void serialLogDouble(String prefix, double decimalValue, String suffix)
 {
   if (SERIAL_DEBUG)
   {
     Console.print(prefix);
     Console.print(" ");
-    Console.println(decimalValue);
+    Console.print(decimalValue);
+    Console.println(suffix);
   }
 }
