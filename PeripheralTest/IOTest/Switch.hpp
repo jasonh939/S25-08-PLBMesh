@@ -6,7 +6,10 @@
 #ifndef SWITCH_H
 #define SWITCH_H
 
-// These are the pins for the buttons
+// Includes
+#include "LED.hpp"
+
+// These are the pins for the switches
 #define SWITCH_1_PIN 12
 #define SWITCH_2_PIN 11
 #define SWITCH_3_PIN 10

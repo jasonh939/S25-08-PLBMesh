@@ -3,17 +3,8 @@
 #include <RHMesh.h>
 #include <TinyGPS++.h>
 #include <TimeLib.h>
-
-// Radio Pins
-#define RFM95_CS 8
-#define RFM95_RST 4
-#define RFM95_INT 3  
-
-// I/O Pins
-#define RED_LED_PIN A0
-#define GREEN_LED_PIN A1
-#define VBAT_PIN A7
-#define NOISE_SEED_PIN A4
+#include "IO/IO.hpp"
+#include "Debug.hpp"
 
 // Packet constants
 #define PACKET_SIZE_BYTES 16
@@ -21,93 +12,26 @@
 #define SLEEP_TIME_VARIANCE 2000    // randomness in sleep time to prevent two transmitters from consistently colliding
 #define GPS_TIME_ALLOWABLE_AGE 500  // how old (in ms) the GPS time is allowed to be when syncing with the system clock
 
-// Baud rate constants
-#define DEBUG_BAUD 9600
-#define GPS_BAUD 38400 // This baud rate is variable depending on the GPS module
-
-// Debug
-#define SERIAL_DEBUG true
-#define Console SerialUSB
-#define DISABLE_STANDBY true
 #define SIMULATE_PACKET true
+#define NOISE_SEED_PIN A4
 
-// Function blueprints
-void serialLogInteger(String prefix, long intValue, String suffix = "");
-void serialLogDouble(String prefix, double decimalValue, String suffix = "");
-
-// Network defining the beacon ID's
+// Address of basestation as well as PLB
 const uint16_t Basestation = 1;
-const uint16_t Beacon1 = 2;
-const uint16_t Beacon2 = 3;
-const uint16_t Beacon3 = 4;
-const uint16_t Beacon4 = 5;
-
-// Radio configurations
-const uint16_t MyAddress = Beacon1; // Change beacon number depending on beacon used.
-const float Frequency = 915.0;
-const int8_t TxPower = 7;
-
-// Singletons
-RH_RF95 driver(RFM95_CS, RFM95_INT);
-RHMesh manager(driver, MyAddress);
-TinyGPSPlus gps;
+const uint16_t MyAddress = 2; // NOTE: Change the address based on the PLB address
 
 void setup() {
-  // Serial setups
-  Serial1.begin(GPS_BAUD);
-  if (SERIAL_DEBUG) {
-    Console.begin(DEBUG_BAUD);
-    while (!Console) {}
+  initDebug(false); // Set parameter to false if you don't want to enable console outputs or test GPS 
 
-    serialLog("Serial Initialized");
-    serialLogInteger("Address: ", MyAddress);
-  }
+  serialLog("Setting up IO...");
+  initIO();
+  serialLog("IO setup complete\n");
 
-  // Pin setups
-  pinMode(RFM95_RST, OUTPUT);
-  pinMode(RED_LED_PIN, OUTPUT);
-  pinMode(GREEN_LED_PIN, OUTPUT);
-
-  // Reset pin outputs
-  digitalWrite(RED_LED_PIN, HIGH);
-  digitalWrite(GREEN_LED_PIN, HIGH);
-
-  // manually reset rf95
-  digitalWrite(RFM95_RST, LOW);
-  delay(10);
-  digitalWrite(RFM95_RST, HIGH);
-  delay(10);  
-
-  serialLog("Initializing radio...");
-  if (!manager.init()) {
-    serialLog("Radio initializing failed");
-    while (true) {
-      toggleLED(RED_LED_PIN);
-      delay(1000);
-    }
-  }
-
-  driver.setFrequency(Frequency);
-	driver.setTxPower(TxPower);
-
-  if (!SIMULATE_PACKET) {
-    serialLog("Waiting for GPS lock...");
-    while (!gps.location.isValid()) {
-      waitingForLock();
-    }
-    serialLog("GPS obtained lock");
-  }
-
-  else {
-    serialLog("Skipping GPS lock");
-  }
-
-  //set random seed using noise from analoge
+  // RNG will be used to change the interval of transmissions.
   uint32_t noise = analogRead(NOISE_SEED_PIN);
   randomSeed(noise);
   serialLogInteger("Setting random seed with noise:", noise);
-
-  serialLog("Setup Complete\n");
+  serialLogBool("Initial standby: ", standby);
+  serialLogBool("Initial panic: ", panic);
 }
 
 byte message[PACKET_SIZE_BYTES];
@@ -122,9 +46,9 @@ void loop() {
   Console.println();
   manager.sendtoWait((uint8_t *)message, PACKET_SIZE_BYTES, Basestation);
   messageID++;
-  toggleLED(GREEN_LED_PIN);
+  toggleLED(GRE_LED_PIN);
   delay(10);
-  toggleLED(GREEN_LED_PIN);
+  toggleLED(GRE_LED_PIN);
   uint16_t waitTime =  random(SLEEP_TIME - SLEEP_TIME_VARIANCE, SLEEP_TIME + SLEEP_TIME_VARIANCE);
   serialLogInteger("Waiting for", waitTime);
   smartDelay(waitTime);
@@ -145,9 +69,9 @@ static void smartDelay(uint16_t ms)
 }
 
 void waitingForLock() {
-  toggleLED(GREEN_LED_PIN);
+  toggleLED(GRE_LED_PIN);
   smartDelay(1000);
-  toggleLED(GREEN_LED_PIN);
+  toggleLED(GRE_LED_PIN);
   smartDelay(1000);
 }
 
@@ -227,37 +151,5 @@ void encodeMessage() {
     //cast data to byte array then get byte by index
     message[byteIndex] = ((uint8_t*)&utc)[i];
     byteIndex++;
-  }
-}
-
-void toggleLED(int LED_PIN) {
-  digitalWrite(LED_PIN, !digitalRead(LED_PIN));
-}
-
-void serialLog(String message) {
-  if (SERIAL_DEBUG) {
-    Console.println(message);
-  }
-}
-
-void serialLogInteger(String prefix, long intValue, String suffix)
-{
-  if (SERIAL_DEBUG)
-  {
-    Console.print(prefix);
-    Console.print(" ");
-    Console.print(intValue);
-    Console.println(suffix);
-  }
-}
-
-void serialLogDouble(String prefix, double decimalValue, String suffix)
-{
-  if (SERIAL_DEBUG)
-  {
-    Console.print(prefix);
-    Console.print(" ");
-    Console.print(decimalValue);
-    Console.println(suffix);
   }
 }
