@@ -67,4 +67,33 @@ void serialLogBool(String prefix, bool boolValue, String suffix = "")
   }
 }
 
+// Helper function for serialLogPacket
+void serialLogByte(byte byteValue)
+{
+  if (SerialDebug)
+  {
+    for (int bit = 7; bit >= 0; bit--) {
+      if (bitRead(byteValue, bit) == 0) {
+        Console.print("0");
+      }
+
+      else {
+        Console.print("1");
+      }
+    }
+    Console.print(" ");
+  }
+}
+
+// Allows console to print out the packet data
+void serialLogPacket(byte packet[], int size) {
+  if (SerialDebug) {
+    Console.print("Packet Data: ");
+    for (int i = 0; i < size; i++) {
+      serialLogByte(packet[i]);
+    }
+    Console.println();
+  }
+}
+
 #endif
