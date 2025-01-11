@@ -14,15 +14,25 @@
 
 TinyGPSPlus gps;
 
-// Waits for a GPS lock
-void waitForLock() {
-  while (!gps.location.isValid()) {
+// Delay function that can read incoming GPS information during the delay time
+void smartDelay(uint16_t ms)
+{
+  unsigned long start = millis();
+  while ((millis() - start) < ms)
+  {
+    //get data from GPS
     while (Serial1.available() > 0)
     {
       gps.encode(Serial1.read());
     }
+  }
+}
+
+// Waits for a GPS lock
+void waitForLock() {
+  while (!gps.location.isValid()) {
+    smartDelay(1000);
     toggleLED(GRE_LED_PIN);
-    delay(1000);
   }
 
   turnOffLED(GRE_LED_PIN);

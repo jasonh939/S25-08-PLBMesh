@@ -1,8 +1,11 @@
+/*
+* Filename: TransmitOnly.ino
+* Author: S25-08
+*/
+
 // includes
-#include <RH_RF95.h>
-#include <RHMesh.h>
-#include <TinyGPS++.h>
 #include <TimeLib.h>
+#include "TransmitOnly.hpp"
 #include "IO/IO.hpp"
 #include "Debug.hpp"
 
@@ -17,7 +20,11 @@
 
 // Address of basestation as well as PLB
 const uint8_t Basestation = 1;
-const uint8_t MyAddress = 2; // NOTE: Change the address based on the PLB address
+const uint8_t MyAddress = 3; // NOTE: Change the address based on the PLB address
+
+// Packet info
+byte message[PACKET_SIZE_BYTES];
+int16_t messageID = 0;
 
 void setup() {
   initDebug(true); // Set parameter to false if you don't want to enable console outputs or test GPS 
@@ -25,6 +32,8 @@ void setup() {
   serialLog("Setting up IO...");
   initIO();
   serialLog("IO setup complete\n");
+
+  manager.setThisAddress(MyAddress);
 
   // RNG will be used to change the interval of transmissions.
   uint32_t noise = analogRead(NOISE_SEED_PIN);
@@ -34,10 +43,27 @@ void setup() {
   serialLogBool("Initial panic: ", panic);
 }
 
-byte message[PACKET_SIZE_BYTES];
-int16_t messageID = 0;
-
 void loop() {
+  if (standby) {
+    standbyMode();
+  }
+  
+  else {
+    activeMode();
+  }
+}
+
+// Standby mode keeps gps lock and sleeps radio module
+void standbyMode() {
+  driver.sleep();
+  smartDelay(1000);  
+}
+
+/*
+* This function deals with the PLB in active mode.
+* 20 second cycle: Transmit -> ACK (5s) -> Downtime (15 +- 2s) -> Repeat
+*/
+void activeMode() {
   encodeMessage();
   serialLogPacket(message, PACKET_SIZE_BYTES);
   manager.sendtoWait((uint8_t *)message, PACKET_SIZE_BYTES, Basestation);
@@ -46,29 +72,23 @@ void loop() {
   delay(10);
   toggleLED(GRE_LED_PIN);
   uint16_t waitTime =  random(SLEEP_TIME - SLEEP_TIME_VARIANCE, SLEEP_TIME + SLEEP_TIME_VARIANCE);
-  serialLogInteger("Waiting ", waitTime, "ms");
+  serialLogInteger("Waiting", waitTime, "ms");
   smartDelay(waitTime);
 }
 
-// Delay function that can read incoming GPS information during the delay time
-static void smartDelay(uint16_t ms)
-{
-  unsigned long start = millis();
-  while ((millis() - start) < ms)
-  {
-    //get data from GPS
-    while (Serial1.available() > 0)
-    {
-      gps.encode(Serial1.read());
-    }
-  }
+// Transmits a single packet to the base station
+void handleTransmit() {
+
 }
 
-void waitingForLock() {
-  toggleLED(GRE_LED_PIN);
-  smartDelay(1000);
-  toggleLED(GRE_LED_PIN);
-  smartDelay(1000);
+// Wait for an ACK from the base station
+void handleACK() {
+
+}
+
+// Downtime between ACK and next packet transmit. Keeps a GPS lock
+void handleIdle() {
+
 }
 
 void encodeMessage() {
@@ -84,8 +104,6 @@ void encodeMessage() {
 
   Total size: 128 bits or 16 bytes
   */
-
-  // NOTE: The new packet structure hasn't been implemented. The current packet structure is still 16 bit Radio ID and 7 bit message ID
 
   int byteIndex = 0;
 
