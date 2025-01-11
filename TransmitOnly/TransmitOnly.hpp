@@ -6,6 +6,9 @@
 #ifndef TRANSMIT_ONLY_H
 #define TRANSMIT_ONLY_H
 
+// Packet constants
+#define PACKET_SIZE_BYTES 16
+
 // Time intervals for active states
 #define ACK_INTERVAL 5000
 #define IDLE_INTERVAL 5000
@@ -32,6 +35,6 @@ void handleACK();
 void handleIdle();
 
 // Function to encode message
-void encodeMessage();
+bool encodeMessage();
 
 #endif

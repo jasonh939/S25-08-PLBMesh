@@ -5,15 +5,10 @@
 
 // includes
 #include <TimeLib.h>
+#include <TinyGPS++.h>
 #include "TransmitOnly.hpp"
 #include "IO/IO.hpp"
 #include "Debug.hpp"
-
-// Packet constants
-#define PACKET_SIZE_BYTES 16
-#define SLEEP_TIME 10000            // time between transmissions
-#define SLEEP_TIME_VARIANCE 2000    // randomness in sleep time to prevent two transmitters from consistently colliding
-#define GPS_TIME_ALLOWABLE_AGE 500  // how old (in ms) the GPS time is allowed to be when syncing with the system clock
 
 // Battery constants
 /*
@@ -106,7 +101,14 @@ void activeMode() {
 // Transmits a single packet to the base station
 void handleTransmit() {
   serialLog("Transmit State");
-  encodeMessage();
+  bool validPacket = encodeMessage();
+  if (validPacket) {
+    serialLog("Encoded packet is valid");
+  }
+
+  else {
+    serialLog("Encoded packet has invalid parts");
+  }
   serialLogPacket(message, PACKET_SIZE_BYTES);
 
   // senttoWait is slightly blocking
@@ -165,7 +167,8 @@ void handleIdle() {
   currState = TRANSMIT;
 }
 
-void encodeMessage() {
+// Function to encode the packet. Return of true indicates all packets are valid.
+bool encodeMessage() {
   /*
   NEW packet structure:
   - 8 bit radio ID
@@ -178,24 +181,41 @@ void encodeMessage() {
 
   Total size: 128 bits or 16 bytes
   */
+  bool isValid = true;
 
   int byteIndex = 0;
 
-  float gpsLat = 100.;
-  float gpsLng = 200.;
-  uint8_t batteryPercent = 50;
-  uint32_t utc = now();
+  // Default packet values. If gps data is invalid, they won't be updated.
+  float gpsLat = 0.;
+  float gpsLng = 0.;
+  uint8_t batteryPercent = 0;
+  uint32_t utc = 0;
 
   if (!SIMULATE_PACKET) {
-    gpsLat = gps.location.lat();
-    gpsLng = gps.location.lng();
+    if (gps.location.isValid()) {
+      gpsLat = gps.location.lat();
+      gpsLng = gps.location.lng();
+    }
+    else {
+      serialLog("GPS location is invalid");
+      isValid = false;
+    }
+
+    if (timeStatus() != timeNotSet) {
+      utc = now();
+    }
+
+    else {
+      serialLog("System clock has not been set");
+      isValid = false;     
+    }
 
     // TODO: fix battery reading issue
-    float batteryReading = analogRead(VBATPIN);
-    batteryReading *= 2;
-    batteryReading *= 3.3;
-    batteryReading /= 1024;
-    serialLogDouble("VBAT:", batteryReading);
+    // float batteryReading = analogRead(VBATPIN);
+    // batteryReading *= 2;
+    // batteryReading *= 3.3;
+    // batteryReading /= 1024;
+    // serialLogDouble("VBAT:", batteryReading);
     // batteryPercent = map(batteryReading, BATTERY_MIN_THRESHOLD, BATTERY_MAX_THRESHOLD, 0, 100);
     // batteryPercent = max(batteryReading, 0);
     // batteryPercent = min(batteryReading, 100);
@@ -253,4 +273,6 @@ void encodeMessage() {
   }
 
   messageID++;
+
+  return isValid;
 }

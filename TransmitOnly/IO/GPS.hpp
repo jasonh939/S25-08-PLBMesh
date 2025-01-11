@@ -8,13 +8,16 @@
 
 // Includes
 #include <TinyGPS++.h>
+#include <TimeLib.h>
 #include "LED.hpp"
 
 #define GPS_BAUD 38400 // This baud rate is variable depending on the GPS module
+#define GPS_TIME_ALLOWABLE_AGE 500  // how old (in ms) the GPS time is allowed to be when syncing with the system clock
 
 TinyGPSPlus gps;
 
-// Delay function that can read incoming GPS information during the delay time
+// Delay function that can read incoming GPS information during the delay time.
+// Also syncs arduino system time on a successful gps encode.
 void smartDelay(uint16_t ms)
 {
   unsigned long start = millis();
@@ -23,7 +26,11 @@ void smartDelay(uint16_t ms)
     //get data from GPS
     while (Serial1.available() > 0)
     {
-      gps.encode(Serial1.read());
+      if (gps.encode(Serial1.read())) {
+        if (gps.time.age() < GPS_TIME_ALLOWABLE_AGE) {
+          setTime(gps.time.hour(), gps.time.minute(), gps.time.second(), gps.date.day(), gps.date.month(), gps.date.year());
+        }
+      }
     }
   }
 }
@@ -45,6 +52,7 @@ void waitForLock() {
 */
 void initGPS() {
   Serial1.begin(GPS_BAUD);
+  while(!Serial1) {}
   waitForLock();
 }
 
