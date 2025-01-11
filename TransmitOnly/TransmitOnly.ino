@@ -15,7 +15,18 @@
 #define SLEEP_TIME_VARIANCE 2000    // randomness in sleep time to prevent two transmitters from consistently colliding
 #define GPS_TIME_ALLOWABLE_AGE 500  // how old (in ms) the GPS time is allowed to be when syncing with the system clock
 
-#define SIMULATE_PACKET true
+// Battery constants
+/*
+* The IDE doesn't recognize A7 as a pin value. 
+* The pin's other name '9' freezes the program when doing analogRead. (Possible due to faulty battery port??)
+* We will have to attach VBAT pin to pin A5 to get the voltage reading
+*/
+#define VBATPIN A5 
+// TODO: might need to change threshold values if we switch batteries
+#define BATTERY_MIN_THRESHOLD 134
+#define BATTERY_MAX_THRESHOLD 511
+
+#define SIMULATE_PACKET false
 #define NOISE_SEED_PIN A4
 
 // Address of basestation as well as PLB
@@ -44,6 +55,8 @@ void setup() {
   serialLogInteger("Setting random seed with noise:", noise);
   serialLogBool("Initial standby: ", standby);
   serialLogBool("Initial panic: ", panic);
+
+  pinMode(VBATPIN, INPUT);
 }
 
 void loop() {
@@ -97,6 +110,7 @@ void handleTransmit() {
   serialLogPacket(message, PACKET_SIZE_BYTES);
 
   // senttoWait is slightly blocking
+  serialLog("Sending packet...");
   if (manager.sendtoWait((uint8_t *)message, PACKET_SIZE_BYTES, Basestation) == RH_ROUTER_ERROR_NONE) {
     serialLog("Packet successfully sent");
     turnOnLED(GRE_LED_PIN);
@@ -116,6 +130,8 @@ void handleTransmit() {
 
 // Wait for an ACK from the base station
 // Early function exit if standby is pressed
+// NOTE: There's a small bug when spam toggling the standby switch it restarts the arduino.
+//  Not sure if that is bad connections, software bug, or faulty switch.
 void handleACK() {
   // TODO: implement ACK
   serialLog("ACK State");
@@ -166,12 +182,25 @@ void encodeMessage() {
   int byteIndex = 0;
 
   float gpsLat = 100.;
-  float gpsLong = 200.;
+  float gpsLng = 200.;
   uint8_t batteryPercent = 50;
-  int32_t utc = now();
+  uint32_t utc = now();
 
   if (!SIMULATE_PACKET) {
-    // TODO: override simulated packet numbers here if using GPS
+    gpsLat = gps.location.lat();
+    gpsLng = gps.location.lng();
+
+    // TODO: fix battery reading issue
+    float batteryReading = analogRead(VBATPIN);
+    batteryReading *= 2;
+    batteryReading *= 3.3;
+    batteryReading /= 1024;
+    serialLogDouble("VBAT:", batteryReading);
+    // batteryPercent = map(batteryReading, BATTERY_MIN_THRESHOLD, BATTERY_MAX_THRESHOLD, 0, 100);
+    // batteryPercent = max(batteryReading, 0);
+    // batteryPercent = min(batteryReading, 100);
+
+    // TODO: implement time sync
   }
 
   // Log packet before sending
@@ -179,7 +208,7 @@ void encodeMessage() {
   serialLogInteger("Panic State:", panic);
   serialLogInteger("Message ID:", messageID);
   serialLogDouble("GPS latitude:", gpsLat);
-  serialLogDouble("GPS longitude:", gpsLong);
+  serialLogDouble("GPS longitude:", gpsLng);
   serialLogInteger("Battery Percent:", batteryPercent);
   serialLogInteger("Timestamp:", utc);
 
@@ -206,9 +235,9 @@ void encodeMessage() {
   }
 
   // encode gpsLong
-  for (int i = sizeof(gpsLong)-1; i>=0; i--)
+  for (int i = sizeof(gpsLng)-1; i>=0; i--)
   {
-    message[byteIndex] = ((uint8_t*)&gpsLong)[i];
+    message[byteIndex] = ((uint8_t*)&gpsLng)[i];
     byteIndex++;
   }
 
