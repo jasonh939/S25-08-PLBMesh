@@ -105,31 +105,47 @@ void handleTransmit() {
   }
 
   else {
-    serialLog("Packet failed to send");
+    serialLog("Packet failed to send\n");
     turnOnLED(YEL_LED_PIN);
     delay(10);
     turnOffLED(YEL_LED_PIN);
   }
 
-  // uint16_t waitTime =  random(SLEEP_TIME - SLEEP_TIME_VARIANCE, SLEEP_TIME + SLEEP_TIME_VARIANCE);
-  // serialLogInteger("Waiting", waitTime, "ms");
-  // smartDelay(waitTime);
   currState = ACK;
 }
 
 // Wait for an ACK from the base station
+// Early function exit if standby is pressed
 void handleACK() {
   // TODO: implement ACK
   serialLog("ACK State");
-  delay(5000);
+  unsigned long start = millis();
+  while ((millis() - start) < ACK_INTERVAL) {
+    updateLEDs();
+    if (standby) {
+      serialLog("Standby detected, early ACK exit");
+      return;
+   }
+   smartDelay(1);
+  }
   currState = IDLE;
 }
 
 // Downtime between ACK and next packet transmit. Keeps a GPS lock
+// Early function exit if standby is pressed
 void handleIdle() {
-  // TODO: implement Idle
   serialLog("Idle State");
-  delay(5000);
+  unsigned long start = millis();
+  uint16_t waitTime = random(IDLE_INTERVAL - IDLE_VARIANCE, IDLE_INTERVAL + IDLE_VARIANCE);
+  while ((millis() - start) < waitTime) {
+    updateLEDs();
+    if (standby) {
+      serialLog("Standby detected, early idle exit.");
+      return;
+    }
+    smartDelay(1);
+  }
+
   currState = TRANSMIT;
 }
 

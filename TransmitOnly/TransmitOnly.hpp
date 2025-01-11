@@ -6,6 +6,11 @@
 #ifndef TRANSMIT_ONLY_H
 #define TRANSMIT_ONLY_H
 
+// Time intervals for active states
+#define ACK_INTERVAL 5000
+#define IDLE_INTERVAL 5000
+#define IDLE_VARIANCE 1000
+
 // Enumerator for active mode states
 enum _Active_State {
   TRANSMIT,
