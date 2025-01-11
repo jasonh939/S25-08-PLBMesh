@@ -26,6 +26,9 @@ const uint8_t MyAddress = 3; // NOTE: Change the address based on the PLB addres
 byte message[PACKET_SIZE_BYTES];
 int16_t messageID = 0;
 
+// Active mode state
+Active_State currState = TRANSMIT;
+
 void setup() {
   initDebug(true); // Set parameter to false if you don't want to enable console outputs or test GPS 
 
@@ -44,6 +47,8 @@ void setup() {
 }
 
 void loop() {
+  updateLEDs();
+
   if (standby) {
     standbyMode();
   }
@@ -53,10 +58,16 @@ void loop() {
   }
 }
 
+// Changes yellow (standby) and/or red (panic) LED if status changed
+void updateLEDs() {
+  panic ? turnOnLED(RED_LED_PIN) : turnOffLED(RED_LED_PIN);
+  standby ? turnOnLED(YEL_LED_PIN) : turnOffLED(YEL_LED_PIN);
+}
+
 // Standby mode keeps gps lock and sleeps radio module
 void standbyMode() {
   driver.sleep();
-  smartDelay(1000);  
+  smartDelay(1);  
 }
 
 /*
@@ -64,31 +75,62 @@ void standbyMode() {
 * 20 second cycle: Transmit -> ACK (5s) -> Downtime (15 +- 2s) -> Repeat
 */
 void activeMode() {
-  encodeMessage();
-  serialLogPacket(message, PACKET_SIZE_BYTES);
-  manager.sendtoWait((uint8_t *)message, PACKET_SIZE_BYTES, Basestation);
-  messageID++;
-  toggleLED(GRE_LED_PIN);
-  delay(10);
-  toggleLED(GRE_LED_PIN);
-  uint16_t waitTime =  random(SLEEP_TIME - SLEEP_TIME_VARIANCE, SLEEP_TIME + SLEEP_TIME_VARIANCE);
-  serialLogInteger("Waiting", waitTime, "ms");
-  smartDelay(waitTime);
+  switch(currState) {
+    case TRANSMIT:
+      handleTransmit();
+      break;
+    
+    case ACK:
+      handleACK();
+      break;
+    
+    case IDLE:
+      handleIdle();
+      break;
+  }
 }
 
 // Transmits a single packet to the base station
 void handleTransmit() {
+  serialLog("Transmit State");
+  encodeMessage();
+  serialLogPacket(message, PACKET_SIZE_BYTES);
 
+  // senttoWait is slightly blocking
+  if (manager.sendtoWait((uint8_t *)message, PACKET_SIZE_BYTES, Basestation) == RH_ROUTER_ERROR_NONE) {
+    serialLog("Packet successfully sent");
+    turnOnLED(GRE_LED_PIN);
+    delay(10);
+    turnOffLED(GRE_LED_PIN);
+  }
+
+  else {
+    serialLog("Packet failed to send");
+    turnOnLED(YEL_LED_PIN);
+    delay(10);
+    turnOffLED(YEL_LED_PIN);
+  }
+
+  // uint16_t waitTime =  random(SLEEP_TIME - SLEEP_TIME_VARIANCE, SLEEP_TIME + SLEEP_TIME_VARIANCE);
+  // serialLogInteger("Waiting", waitTime, "ms");
+  // smartDelay(waitTime);
+  currState = ACK;
 }
 
 // Wait for an ACK from the base station
 void handleACK() {
-
+  // TODO: implement ACK
+  serialLog("ACK State");
+  delay(5000);
+  currState = IDLE;
 }
 
 // Downtime between ACK and next packet transmit. Keeps a GPS lock
 void handleIdle() {
-
+  // TODO: implement Idle
+  serialLog("Idle State");
+  delay(5000);
+  currState = TRANSMIT;
 }
 
 void encodeMessage() {
@@ -164,4 +206,6 @@ void encodeMessage() {
     message[byteIndex] = ((uint8_t*)&utc)[i];
     byteIndex++;
   }
+
+  messageID++;
 }

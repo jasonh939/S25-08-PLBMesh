@@ -23,12 +23,10 @@ volatile bool panic = false;
 // NOTE: there's a possibility that these malfunction if the voltage randomly shifts without touching the switch.
 // This will cause the switches to have inverted behaviour. Not sure if they will be negligible problems or will have to change.
 void ACTIVE_STANDBY_TOGGLE() {
-  toggleLED(YEL_LED_PIN);
   standby = !standby;
 }
 
 void PANIC_TOGGLE() {
-  toggleLED(RED_LED_PIN);
   panic = !panic;
 }
 

@@ -14,6 +14,9 @@ enum _Active_State {
 };
 typedef enum _Active_State Active_State;
 
+// Function to update status LEDs
+void updateLEDs();
+
 // Standby mode and handle functions
 void standbyMode();
 
