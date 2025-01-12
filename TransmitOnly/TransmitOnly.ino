@@ -36,11 +36,11 @@ int16_t messageID = 0;
 Active_State currState = TRANSMIT;
 
 void setup() {
-  initDebug(true); // Set parameter to false if you don't want to enable console outputs or test GPS 
+  initDebug(true); // NOTE: Set parameter to false if not using Arduino IDE. 
 
   serialLog("Setting up IO...");
   initIO();
-  serialLog("IO setup complete\n");
+  serialLog("IO setup complete");
 
   manager.setThisAddress(MyAddress);
 
@@ -50,6 +50,7 @@ void setup() {
   serialLogInteger("Setting random seed with noise:", noise);
   serialLogBool("Initial standby: ", standby);
   serialLogBool("Initial panic: ", panic);
+  serialLog("");
 
   pinMode(VBATPIN, INPUT);
 }
@@ -101,20 +102,16 @@ void activeMode() {
 // Transmits a single packet to the base station
 void handleTransmit() {
   serialLog("Transmit State");
-  bool validPacket = encodeMessage();
-  if (validPacket) {
-    serialLog("Encoded packet is valid");
-  }
-
-  else {
-    serialLog("Encoded packet has invalid parts");
-  }
-  serialLogPacket(message, PACKET_SIZE_BYTES);
+  serialLog("");
+  encodeMessage();
+  serialLogPacketBin(message, PACKET_SIZE_BYTES);
+  serialLogPacketRead(message);
+  serialLog("");
 
   // senttoWait is slightly blocking
   serialLog("Sending packet...");
   if (manager.sendtoWait((uint8_t *)message, PACKET_SIZE_BYTES, Basestation) == RH_ROUTER_ERROR_NONE) {
-    serialLog("Packet successfully sent");
+    serialLog("Packet successfully sent\n");
     turnOnLED(GRE_LED_PIN);
     delay(10);
     turnOffLED(GRE_LED_PIN);
@@ -168,7 +165,7 @@ void handleIdle() {
 }
 
 // Function to encode the packet. Return of true indicates all packets are valid.
-bool encodeMessage() {
+void encodeMessage() {
   /*
   NEW packet structure:
   - 8 bit radio ID
@@ -181,8 +178,6 @@ bool encodeMessage() {
 
   Total size: 128 bits or 16 bytes
   */
-  bool isValid = true;
-
   int byteIndex = 0;
 
   // Default packet values. If gps data is invalid, they won't be updated.
@@ -198,7 +193,6 @@ bool encodeMessage() {
     }
     else {
       serialLog("GPS location is invalid");
-      isValid = false;
     }
 
     if (timeStatus() != timeNotSet) {
@@ -206,31 +200,11 @@ bool encodeMessage() {
     }
 
     else {
-      serialLog("System clock has not been set");
-      isValid = false;     
+      serialLog("System clock has not been set");   
     }
 
-    // TODO: fix battery reading issue
-    // float batteryReading = analogRead(VBATPIN);
-    // batteryReading *= 2;
-    // batteryReading *= 3.3;
-    // batteryReading /= 1024;
-    // serialLogDouble("VBAT:", batteryReading);
-    // batteryPercent = map(batteryReading, BATTERY_MIN_THRESHOLD, BATTERY_MAX_THRESHOLD, 0, 100);
-    // batteryPercent = max(batteryReading, 0);
-    // batteryPercent = min(batteryReading, 100);
-
-    // TODO: implement time sync
+    // TODO: Implement battery reading. Old group code doesn't work becuase pin A7 is not recognized.
   }
-
-  // Log packet before sending
-  serialLogInteger("Radio ID:", MyAddress);
-  serialLogInteger("Panic State:", panic);
-  serialLogInteger("Message ID:", messageID);
-  serialLogDouble("GPS latitude:", gpsLat);
-  serialLogDouble("GPS longitude:", gpsLng);
-  serialLogInteger("Battery Percent:", batteryPercent);
-  serialLogInteger("Timestamp:", utc);
 
   // encode radio ID
   for (int i = sizeof(MyAddress)-1; i>=0; i--)
@@ -242,7 +216,7 @@ bool encodeMessage() {
 
   // encode panicState and messageID
   uint16_t panicMask = messageID | (panic ? 0x8000 : 0x0000);
-  for (int i = sizeof(panicMask)-1; i>=0; i--) {
+  for (int i = sizeof(messageID)-1; i>=0; i--) {
     message[byteIndex] = ((uint8_t*)&panicMask)[i];
     byteIndex++;
   } 
@@ -273,6 +247,4 @@ bool encodeMessage() {
   }
 
   messageID++;
-
-  return isValid;
 }

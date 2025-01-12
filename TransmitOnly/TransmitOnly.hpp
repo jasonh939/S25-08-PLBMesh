@@ -35,6 +35,6 @@ void handleACK();
 void handleIdle();
 
 // Function to encode message
-bool encodeMessage();
+void encodeMessage();
 
 #endif
