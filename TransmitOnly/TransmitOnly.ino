@@ -24,11 +24,15 @@
 #define SIMULATE_PACKET false
 #define NOISE_SEED_PIN A4
 
-// Address of basestation as well as PLB
+// Address of basestation as well as all the PLBs
 const uint8_t Basestation = 1;
-const uint8_t MyAddress = 3; // NOTE: Change the address based on the PLB address
+const uint8_t Beacon1 = 2;
+const uint8_t Beacon2 = 3;
+const uint8_t Beacon3 = 4;
+const uint8_t Beacon4 = 5;
 
 // Packet info
+const uint8_t MyAddress = Beacon3; // NOTE: Change the address based on the PLB address
 byte message[PACKET_SIZE_BYTES];
 int16_t messageID = 0;
 

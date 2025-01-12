@@ -3,13 +3,13 @@
 * Author: S25-08
 */
 
-#ifndef IO_H
-#define IO_H
+#ifndef BSIO_H
+#define BSIO_H
 
 
 // Includes
 #include "LED.hpp"
-#include "Switch.hpp"
+// #include "Switch.hpp"
 #include "Radio.hpp"
 #include "GPS.hpp"
 
@@ -17,13 +17,14 @@
 void initIO() {
   initLEDs();
   initRadio();
-  initSwitches();
+  // initSwitches();
   
   /* 
   * After this point, the LED and switches should be functional.
   * The GPS lock might take a couple of minutes.
   */
-  initGPS();
+  // Commented out for now since I only have one GPS for the PLB
+  // initGPS();
 }
 
 #endif
