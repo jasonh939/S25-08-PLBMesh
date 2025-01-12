@@ -8,6 +8,7 @@
 
 // Packet constants
 #define PACKET_SIZE_BYTES 16
+#define MAX_ACK_MESSAGE_LEN 100
 
 // Time intervals for active states
 #define ACK_INTERVAL 5000

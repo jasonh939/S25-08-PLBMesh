@@ -109,7 +109,7 @@ void handleTransmit() {
   serialLog("");
   encodeMessage();
   serialLogPacketBin(message, PACKET_SIZE_BYTES);
-  serialLogPacketRead(message);
+  serialLogPacketRead(message, PACKET_SIZE_BYTES);
   serialLog("");
 
   // senttoWait is slightly blocking
@@ -137,16 +137,32 @@ void handleTransmit() {
 //  Not sure if that is bad connections, software bug, or faulty switch.
 void handleACK() {
   // TODO: implement ACK
-  serialLog("ACK State");
+  serialLog("ACK State. Waiting for ACK...");
+  
+  byte ackPacket[MAX_ACK_MESSAGE_LEN];
+  uint8_t len = sizeof(ackPacket);
+  uint8_t from;
+
   unsigned long start = millis();
   while ((millis() - start) < ACK_INTERVAL) {
     updateLEDs();
     if (standby) {
       serialLog("Standby detected, early ACK exit");
       return;
-   }
-   smartDelay(1);
+    }
+    smartDelay(1);
+
+    if (manager.recvfromAckTimeout((uint8_t *)ackPacket, &len, 1, &from)) {
+      // TODO: implement visual ACK
+      serialLog("ACK recieved");
+      serialLogCharArray("Packet message:", (char *)ackPacket);
+      serialLog("");
+      currState = IDLE;
+      return;
+    }
   }
+
+  serialLog("No ACK recieved");
   currState = IDLE;
 }
 

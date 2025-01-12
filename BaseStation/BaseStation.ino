@@ -1,6 +1,9 @@
 /*
 * Filename: Basestation.ino
 * Author: S25-08
+* Note: The python script takes in all the serial outputs.
+*   Make sure to set the bool value of the initDebug function to false
+    before using the python script.
 */
 
 // includes
@@ -13,11 +16,11 @@
 // Radio configurations
 const uint16_t MyAddress = 1;
 byte recPacket[RH_MESH_MAX_MESSAGE_LEN];
-char ackPacket[MAX_ACK_MESSAGE_LEN];
+uint8_t ackPacket[MAX_ACK_MESSAGE_LEN];
 
 void setup() {
   // put your setup code here, to run once:
-  initDebug(true);
+  initDebug(true); // Set argument to false when using python script
 
   serialLog("Setting up IO...");
   initIO();
@@ -30,29 +33,43 @@ void loop() {
   // put your main code here, to run repeatedly:
   if (manager.waitAvailableTimeout(BS_TIMEOUT_INTERVAL))
 	{
-		// // Wait for a message addressed to us from the client
-		// uint8_t len = sizeof(recPacket);
-		// uint8_t from;
-		// if (manager.recvfromAck((uint8_t *)recPacket, &len, &from))
-		// {
-		// 	Console.print ("from @");
-		// 	Console.print (from, DEC);
-		// 	Console.print (" R[");
-		// 	Console.print (len);
-		// 	Console.print ("]<");
-		// 	//Console.print (buf);
-    //   for (int i = 0; i < len; i++){
-    //      Console.print(recPacket[i], BIN);
-    //      Console.print(" ");
-    //   }
-    //   Console.println();
-		// 	Console.print (">(");
-		// 	Console.print (driver.lastRssi(), DEC);
-		// 	Console.print ("dBm) ---> send reply to @");
-		// 	Console.print (from, DEC);
-		// 	Console.println (" ---> ");
-		// 	Console.flush();
-		// }
+    uint8_t len = sizeof(recPacket);
+    if (isMeshPacket()) {
+      uint8_t from;
+      if (manager.recvfromAck((uint8_t *)recPacket, &len, &from)) {
+        serialLog("Mesh packet recieved");
+        serialLogPacketBin(recPacket, len);
+        serialLogPacketRead(recPacket, len);
+        serialLog("Sending ACK...");
+
+        sprintf((char *)ackPacket, "ACK to address: %d with message ID recieved: %d", from, getMessageID());
+        if (manager.sendtoWait(ackPacket, sizeof(ackPacket), from) == RH_ROUTER_ERROR_NONE) {
+          serialLog("Successfully sent ACK\n");
+        }
+        else {
+          serialLog("ACK failed to send\n");
+        }
+      }
+
+      else {
+        turnOnLED(YEL_LED_PIN);
+        delay(10);
+        turnOffLED(YEL_LED_PIN); 
+      }
+    }
+
+    else {
+      // TODO: implement recieving old packet
+      if (driver.recv((uint8_t *)recPacket, &len)) {
+        serialLog("Legacy packet recieved.");
+      }
+
+      else {
+        turnOnLED(YEL_LED_PIN);
+        delay(10);
+        turnOffLED(YEL_LED_PIN); 
+      }
+    }
 	}
 
   else {
@@ -63,7 +80,11 @@ void loop() {
 }
 
 bool isMeshPacket() {
-  // TODO: implement
-  return true;
+  // A header value of 255 indicates that the packet is legacy.
+  return (driver.headerFrom() != 255) ? true : false;
 }
 
+uint16_t getMessageID() {
+  const int msgIDIndex = 1;
+  return ((recPacket[msgIDIndex ] & 0b01111111) << 8) | recPacket[msgIDIndex  + 1];
+}
