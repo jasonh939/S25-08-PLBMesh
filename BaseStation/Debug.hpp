@@ -130,14 +130,24 @@ void serialLogPacketRead(byte packet[], int size) {
     uint8_t batteryPercent;
     uint32_t utc;
 
-    // decode radio ID
-    radioID = packet[byteIndex];
-    byteIndex++;
+    // determine if the beacon packet is legacy or new
+    bool isLegacy = (packet[byteIndex] & 0b10000000) ? false : true;
+    if (isLegacy) { // decode radio ID, panic state, and msgID
+      radioID = ((packet[byteIndex] & 0b01111111) << 8) | packet[byteIndex + 1];
+      byteIndex += 2;
 
-    // decode panic state and msgID
-    panic = (packet[byteIndex] & 0b10000000) ? true : false;
-    msgID = ((packet[byteIndex] & 0b01111111) << 8) | packet[byteIndex + 1];
-    byteIndex += 2;
+      msgID = packet[byteIndex];
+      byteIndex++;     
+    }
+
+    else {
+      radioID = packet[byteIndex] & 0b01111111;
+      byteIndex++;
+
+      panic = (packet[byteIndex] & 0b10000000) ? true : false;
+      msgID = ((packet[byteIndex] & 0b01111111) << 8) | packet[byteIndex + 1];
+      byteIndex += 2;
+    }
 
     // decode latitude
     for (int i = 3; i >= 0; i--) {

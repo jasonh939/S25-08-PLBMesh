@@ -162,7 +162,7 @@ void handleACK() {
     }
   }
 
-  serialLog("No ACK recieved");
+  serialLog("No ACK recieved\n");
   currState = IDLE;
 }
 
@@ -229,8 +229,8 @@ void encodeMessage() {
   // encode radio ID
   for (int i = sizeof(MyAddress)-1; i>=0; i--)
   {
-    //cast data to byte array then get byte by index
-    message[byteIndex] = ((uint8_t*)&MyAddress)[i];
+    // MSB is to determine if packet is legacy (0) or new (1)
+    message[byteIndex] = ((uint8_t*)&MyAddress)[i] | 0b10000000;
     byteIndex++;
   }
 
