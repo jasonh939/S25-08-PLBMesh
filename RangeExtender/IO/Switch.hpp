@@ -42,10 +42,10 @@ void initSwitches() {
   }
 
   // NOTE: Comment out if using range-extender
-  if (digitalRead(PANIC_SWITCH_PIN) == HIGH) {
-    turnOnLED(RED_LED_PIN);
-    panic = true;
-  }
+  // if (digitalRead(PANIC_SWITCH_PIN) == HIGH) {
+  //   turnOnLED(RED_LED_PIN);
+  //   panic = true;
+  // }
   
   attachInterrupt(digitalPinToInterrupt(ACTIVE_STANDBY_PIN), ACTIVE_STANDBY_TOGGLE, CHANGE);
   attachInterrupt(digitalPinToInterrupt(PANIC_SWITCH_PIN), PANIC_TOGGLE, CHANGE);

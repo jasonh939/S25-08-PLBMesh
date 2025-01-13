@@ -42,6 +42,7 @@ Active_State currState = TRANSMIT;
 void setup() {
   initDebug(true); // NOTE: Set parameter to false if not using Arduino IDE. 
 
+  serialLog("TRANSMIT-ONLY MODE");
   serialLog("Setting up IO...");
   initIO();
   serialLog("IO setup complete");
@@ -52,8 +53,6 @@ void setup() {
   uint32_t noise = analogRead(NOISE_SEED_PIN);
   randomSeed(noise);
   serialLogInteger("Setting random seed with noise:", noise);
-  serialLogBool("Initial standby: ", standby);
-  serialLogBool("Initial panic: ", panic);
   serialLog("");
 
   pinMode(VBATPIN, INPUT);
