@@ -16,7 +16,9 @@ const uint8_t Beacon3 = 4;
 const uint8_t Beacon4 = 5;
 
 // Packet info
-const uint8_t MyAddress = Beacon2; // NOTE: Change the address based on the PLB address 
+const uint8_t MyAddress = Beacon2; // NOTE: Change the address based on the PLB address
+byte message[PACKET_SIZE_BYTES];
+
 
 void setup() {
   initDebug(true); // NOTE: Set parameter to false if not using Arduino IDE. 
@@ -58,4 +60,8 @@ void standbyMode() {
 */
 void activeMode() {
   // Implement active mode. Reference base station code for legacy vs mesh differentiation
+}
+
+void repackLegacy() {
+  // TODO: implement function to repack legacy packets
 }

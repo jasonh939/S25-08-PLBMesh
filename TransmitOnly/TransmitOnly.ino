@@ -135,7 +135,6 @@ void handleTransmit() {
 // NOTE: There's a small bug when spam toggling the standby switch it restarts the arduino.
 //  Not sure if that is bad connections, software bug, or faulty switch.
 void handleACK() {
-  // TODO: implement ACK
   serialLog("ACK State. Waiting for ACK...");
   
   byte ackPacket[MAX_ACK_MESSAGE_LEN];
