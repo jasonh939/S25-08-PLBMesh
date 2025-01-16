@@ -34,5 +34,6 @@ void loop() {
     delay(10);
   }
 
+  toggleLED(GRE_LED_PIN);
   delay(5000);
 }
