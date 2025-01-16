@@ -109,6 +109,7 @@ void handleTransmit() {
     turnOnLED(GRE_LED_PIN);
     delay(10);
     turnOffLED(GRE_LED_PIN);
+    currState = ACK;
   }
 
   else {
@@ -116,9 +117,8 @@ void handleTransmit() {
     turnOnLED(YEL_LED_PIN);
     delay(10);
     turnOffLED(YEL_LED_PIN);
+    currState = RANGE_EXTENDER;
   }
-
-  currState = ACK;
 }
 
 // Wait for an ACK from the base station

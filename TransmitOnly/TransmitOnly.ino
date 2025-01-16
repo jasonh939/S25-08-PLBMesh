@@ -11,12 +11,7 @@
 #include "Debug.hpp"
 
 // Battery constants
-/*
-* The IDE doesn't recognize A7 as a pin value. 
-* The pin's other name '9' freezes the program when doing analogRead. (Possible due to faulty battery port??)
-* We will have to attach VBAT pin to pin A5 to get the voltage reading
-*/
-#define VBATPIN A5 
+#define VBATPIN A7 
 // TODO: might need to change threshold values if we switch batteries
 #define BATTERY_MIN_THRESHOLD 134
 #define BATTERY_MAX_THRESHOLD 511
@@ -118,6 +113,7 @@ void handleTransmit() {
     turnOnLED(GRE_LED_PIN);
     delay(10);
     turnOffLED(GRE_LED_PIN);
+    currState = ACK;
   }
 
   else {
@@ -125,9 +121,8 @@ void handleTransmit() {
     turnOnLED(YEL_LED_PIN);
     delay(10);
     turnOffLED(YEL_LED_PIN);
+    currState = IDLE;
   }
-
-  currState = ACK;
 }
 
 // Wait for an ACK from the base station

@@ -7,7 +7,7 @@
 #define DEBUG_H
 
 #define DEBUG_BAUD 9600
-#define Console SerialUSB
+#define Console Serial
 
 bool SerialDebug = true;
 
