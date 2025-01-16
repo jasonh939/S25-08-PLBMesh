@@ -49,8 +49,6 @@ void setup() {
   randomSeed(noise);
   serialLogInteger("Setting random seed with noise:", noise);
   serialLog("");
-
-  pinMode(VBATPIN, INPUT);
 }
 
 void loop() {
@@ -216,7 +214,11 @@ void encodeMessage() {
       serialLog("System clock has not been set");   
     }
 
-    // TODO: Implement battery reading. Old group code doesn't work becuase pin A7 is not recognized.
+    // NOTE: battery percent is unverified if accurate (currently seems inaccurate with current min and max thresholds)
+    long batteryReading = analogRead(VBATPIN);
+    batteryPercent = map(batteryReading, BATTERY_MIN_THRESHOLD, BATTERY_MAX_THRESHOLD, 0, 100);
+    batteryPercent = max(batteryPercent, 0);
+    batteryPercent = min(batteryPercent, 100);
   }
 
   // encode radio ID
