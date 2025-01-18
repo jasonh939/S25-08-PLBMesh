@@ -67,18 +67,6 @@ void serialLogBool(String prefix, bool boolValue, String suffix = "")
   }
 }
 
-// Allows console to print out message with a char array. Used for printing out ackPacket.
-void serialLogCharArray(String prefix, char strValue[], String suffix = "")
-{
-  if (SerialDebug)
-  {
-    Console.print(prefix);
-    Console.print(" ");
-    Console.print(strValue);
-    Console.println(suffix);
-  }
-}
-
 // Helper function for serialLogPacket
 void serialLogByte(byte byteValue)
 {
@@ -100,11 +88,6 @@ void serialLogByte(byte byteValue)
 // Allows console to print out the packet data
 void serialLogPacketBin(byte packet[], int size) {
   if (SerialDebug) {
-    if (size != 16) {
-      serialLog("Invalid packet size. Skipping print");
-      return;
-    }  
-
     Console.print("Packet Data: ");
     for (int i = 0; i < size; i++) {
       serialLogByte(packet[i]);

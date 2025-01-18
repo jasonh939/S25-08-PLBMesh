@@ -7,13 +7,17 @@
 #define BASESTATION_H
 
 #define VALID_PACKET_SIZE 16
-#define MAX_ACK_MESSAGE_LEN 100
+#define ACK_SIZE_BYTES 3
 #define BS_TIMEOUT_INTERVAL 5000
 
 // Function to determine if packet recieved is driver or mesh
 bool isMeshPacket();
 
-// Function to parse out message ID from packet
+// Functions to parse out data from packet
+uint8_t getRadioID();
 uint16_t getMessageID();
+
+// Function to encode the ACK packet
+void encodeAck();
 
 #endif

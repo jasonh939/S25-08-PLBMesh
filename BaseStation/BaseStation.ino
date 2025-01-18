@@ -16,7 +16,7 @@
 // Radio configurations
 const uint16_t MyAddress = 1;
 byte recPacket[RH_MESH_MAX_MESSAGE_LEN];
-uint8_t ackPacket[MAX_ACK_MESSAGE_LEN];
+byte ackPacket[ACK_SIZE_BYTES];
 
 void setup() {
   // put your setup code here, to run once:
@@ -42,7 +42,7 @@ void loop() {
         serialLogPacketRead(recPacket, len);
         serialLog("Sending ACK...");
 
-        sprintf((char *)ackPacket, "ACK to address: %d with message ID recieved: %d", from, getMessageID());
+        encodeAck();
         if (manager.sendtoWait(ackPacket, sizeof(ackPacket), from) == RH_ROUTER_ERROR_NONE) {
           serialLog("Successfully sent ACK\n");
         }
@@ -84,7 +84,31 @@ bool isMeshPacket() {
   return (driver.headerFrom() != 255) ? true : false;
 }
 
+uint8_t getRadioID() {
+  const int radioIDIndex = 0;
+  return recPacket[radioIDIndex] & 0b01111111;
+}
+
 uint16_t getMessageID() {
   const int msgIDIndex = 1;
-  return ((recPacket[msgIDIndex ] & 0b01111111) << 8) | recPacket[msgIDIndex  + 1];
+  return ((recPacket[msgIDIndex] & 0b01111111) << 8) | recPacket[msgIDIndex  + 1];
+}
+
+void encodeAck() {
+  uint8_t radioID = getRadioID();
+  uint16_t messageID = getMessageID();
+  int byteIndex = 0;
+
+  // encode radio ID
+  for (int i = sizeof(radioID)-1; i>=0; i--)
+  {
+    ackPacket[byteIndex] = ((uint8_t*)&radioID)[i];
+    byteIndex++;
+  }
+
+  // encode messageID
+  for (int i = sizeof(messageID)-1; i>=0; i--) {
+    ackPacket[byteIndex] = ((uint8_t*)&messageID)[i];
+    byteIndex++;
+  } 
 }

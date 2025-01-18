@@ -130,7 +130,7 @@ void handleTransmit() {
 void handleACK() {
   serialLog("ACK State. Waiting for ACK...");
   
-  byte ackPacket[MAX_ACK_MESSAGE_LEN];
+  byte ackPacket[ACK_SIZE_BYTES];
   uint8_t len = sizeof(ackPacket);
   uint8_t from;
 
@@ -146,7 +146,7 @@ void handleACK() {
     if (manager.recvfromAckTimeout((uint8_t *)ackPacket, &len, 1, &from)) {
       // TODO: implement visual ACK
       serialLog("ACK recieved");
-      serialLogCharArray("Packet message:", (char *)ackPacket);
+      serialLogPacketBin(ackPacket, ACK_SIZE_BYTES);
       serialLog("");
       currState = IDLE;
       return;
