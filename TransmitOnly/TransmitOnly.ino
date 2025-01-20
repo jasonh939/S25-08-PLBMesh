@@ -16,7 +16,7 @@
 #define BATTERY_MIN_THRESHOLD 134
 #define BATTERY_MAX_THRESHOLD 511
 
-#define SIMULATE_PACKET false
+#define SIMULATE_PACKET true
 #define NOISE_SEED_PIN A4
 
 // Address of basestation as well as all the PLBs
@@ -49,6 +49,11 @@ void setup() {
   randomSeed(noise);
   serialLogInteger("Setting random seed with noise:", noise);
   serialLog("");
+
+  // Wait for GPS lock before first transmit
+  if (!SIMULATE_PACKET) {
+    waitForLock();
+  }
 }
 
 void loop() {

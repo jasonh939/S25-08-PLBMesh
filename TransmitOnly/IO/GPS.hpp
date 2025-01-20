@@ -53,7 +53,6 @@ void waitForLock() {
 void initGPS() {
   Serial1.begin(GPS_BAUD);
   while(!Serial1) {}
-  waitForLock();
 }
 
 #endif

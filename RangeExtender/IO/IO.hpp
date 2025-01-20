@@ -23,7 +23,7 @@ void initIO() {
   * After this point, the LED and switches should be functional.
   * The GPS lock might take a couple of minutes.
   */
-  //initGPS(); // NOTE: Comment out if using range-extender
+  // initGPS(); // NOTE: Comment out if using range-extender
 }
 
 #endif
