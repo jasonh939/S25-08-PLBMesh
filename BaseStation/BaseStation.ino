@@ -62,6 +62,8 @@ void loop() {
       // TODO: implement recieving old packet
       if (driver.recv((uint8_t *)recPacket, &len)) {
         serialLog("Legacy packet recieved.");
+        serialLogPacketBin(recPacket, len);
+        serialLogPacketRead(recPacket, len);
       }
 
       else {

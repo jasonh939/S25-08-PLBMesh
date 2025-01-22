@@ -107,7 +107,7 @@ void setup()
 
 void loop()
 {
-  if (gps.location.isValid())
+  if (true) // gps.location.isValid()
   {
     digitalWrite(POWER_LED_PIN, HIGH);
     if (activeState)
@@ -213,7 +213,7 @@ void activeMode()
     serialLog("GPS satellites invalid");
   }
 
-  if (gps.location.isValid() && timeStatus() != timeNotSet)
+  if (true) // gps.location.isValid() && timeStatus() != timeNotSet
   {
     int32_t utc = now();
 
