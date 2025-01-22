@@ -16,33 +16,19 @@
 
 TinyGPSPlus gps;
 
-// Delay function that can read incoming GPS information during the delay time.
+// Updates the GPS data.
 // Also syncs arduino system time on a successful gps encode.
-void smartDelay(uint16_t ms)
+void updateGPS()
 {
-  unsigned long start = millis();
-  while ((millis() - start) < ms)
+  //get data from GPS
+  while (Serial1.available() > 0)
   {
-    //get data from GPS
-    while (Serial1.available() > 0)
-    {
-      if (gps.encode(Serial1.read())) {
-        if (gps.time.age() < GPS_TIME_ALLOWABLE_AGE) {
-          setTime(gps.time.hour(), gps.time.minute(), gps.time.second(), gps.date.day(), gps.date.month(), gps.date.year());
-        }
+    if (gps.encode(Serial1.read())) {
+      if (gps.time.age() < GPS_TIME_ALLOWABLE_AGE) {
+        setTime(gps.time.hour(), gps.time.minute(), gps.time.second(), gps.date.day(), gps.date.month(), gps.date.year());
       }
     }
   }
-}
-
-// Waits for a GPS lock
-void waitForLock() {
-  while (!gps.location.isValid()) {
-    smartDelay(1000);
-    toggleLED(GRE_LED_PIN);
-  }
-
-  turnOffLED(GRE_LED_PIN);
 }
 
 /*

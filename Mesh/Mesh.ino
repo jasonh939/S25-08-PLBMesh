@@ -53,7 +53,7 @@ void setup() {
 void loop() {
   updateLEDs();
 
-  if (standby) {
+  if (switchIsOn(ACTIVE_STANDBY_PIN)) {
     standbyMode();
   }
   
@@ -64,14 +64,28 @@ void loop() {
 
 // Changes yellow (standby) and/or red (panic) LED if status changed
 void updateLEDs() {
-  panic ? turnOnLED(RED_LED_PIN) : turnOffLED(RED_LED_PIN);
-  standby ? turnOnLED(YEL_LED_PIN) : turnOffLED(YEL_LED_PIN);
+  switchIsOn(PANIC_SWITCH_PIN) ? turnOnLED(RED_LED_PIN) : turnOffLED(RED_LED_PIN);
+  switchIsOn(ACTIVE_STANDBY_PIN) ? turnOnLED(YEL_LED_PIN) : turnOffLED(YEL_LED_PIN);
+}
+
+// Function will block until a GPS lock is obtained. Also updates LED lights incase switch toggles
+void waitForLock() {
+  while (!gps.location.isValid()) {
+    unsigned long start = millis();
+    while ((millis() - start) < GPS_INTERVAL) {
+      updateGPS();
+      updateLEDs();
+    }
+    toggleLED(GRE_LED_PIN);
+  }
+
+  turnOffLED(GRE_LED_PIN);
 }
 
 // Standby mode keeps gps lock and sleeps radio module
 void standbyMode() {
   driver.sleep();
-  smartDelay(1);  
+  updateGPS();  
 }
 
 /*
@@ -131,23 +145,23 @@ void handleTransmit() {
 void handleACK() {
   serialLog("ACK State. Waiting for ACK...");
   
-  byte ackPacket[MAX_ACK_MESSAGE_LEN];
+  byte ackPacket[ACK_SIZE_BYTES];
   uint8_t len = sizeof(ackPacket);
   uint8_t from;
 
   unsigned long start = millis();
   while ((millis() - start) < ACK_INTERVAL) {
     updateLEDs();
-    if (standby) {
+    if (switchIsOn(ACTIVE_STANDBY_PIN)) {
       serialLog("Standby detected, early ACK exit");
       return;
     }
-    smartDelay(1);
+    updateGPS();
 
     if (manager.recvfromAckTimeout((uint8_t *)ackPacket, &len, 1, &from)) {
       // TODO: implement visual ACK
       serialLog("ACK recieved");
-      serialLogCharArray("Packet message:", (char *)ackPacket);
+      serialLogPacketBin(ackPacket, ACK_SIZE_BYTES);
       serialLog("");
       currState = IDLE;
       return;
@@ -173,11 +187,11 @@ void handleIdle() {
   uint16_t waitTime = random(IDLE_INTERVAL - IDLE_VARIANCE, IDLE_INTERVAL + IDLE_VARIANCE);
   while ((millis() - start) < waitTime) {
     updateLEDs();
-    if (standby) {
+    if (switchIsOn(ACTIVE_STANDBY_PIN)) {
       serialLog("Standby detected, early idle exit.");
       return;
     }
-    smartDelay(1);
+    updateGPS();
   }
 
   currState = TRANSMIT;
@@ -203,7 +217,7 @@ void encodeMessage() {
   float gpsLat = 0.;
   float gpsLng = 0.;
   uint8_t batteryPercent = 0;
-  uint32_t utc = 0;
+  uint32_t utc = now();
 
   if (!SIMULATE_PACKET) {
     if (gps.location.isValid()) {
@@ -234,7 +248,7 @@ void encodeMessage() {
   }
 
   // encode panicState and messageID
-  uint16_t panicMask = messageID | (panic ? 0x8000 : 0x0000);
+  uint16_t panicMask = messageID | (switchIsOn(PANIC_SWITCH_PIN) ? 0x8000 : 0x0000);
   for (int i = sizeof(messageID)-1; i>=0; i--) {
     message[byteIndex] = ((uint8_t*)&panicMask)[i];
     byteIndex++;

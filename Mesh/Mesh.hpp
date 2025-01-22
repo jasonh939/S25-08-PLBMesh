@@ -8,9 +8,10 @@
 
 // Packet constants
 #define PACKET_SIZE_BYTES 16
-#define MAX_ACK_MESSAGE_LEN 100
+#define ACK_SIZE_BYTES 3
 
-// Time intervals for active states
+// Time intervals for various timers
+#define GPS_INTERVAL 1000
 #define ACK_INTERVAL 5000
 #define RANGE_EXTENDER_INTERVAL 5000
 #define IDLE_INTERVAL 5000
@@ -27,6 +28,9 @@ typedef enum _Active_State Active_State;
 
 // Function to update status LEDs
 void updateLEDs();
+
+// Function to obtain a GPS lock
+void waitForLock();
 
 // Standby mode function
 void standbyMode();

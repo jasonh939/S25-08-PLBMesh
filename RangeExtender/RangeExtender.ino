@@ -34,7 +34,7 @@ void setup() {
 void loop() {
   updateLEDs();
 
-  if (standby) {
+  if (switchIsOn(ACTIVE_STANDBY_PIN)) {
     standbyMode();
   }
   
@@ -45,7 +45,7 @@ void loop() {
 
 // Changes yellow (standby) if status changed
 void updateLEDs() {
-  standby ? turnOnLED(YEL_LED_PIN) : turnOffLED(YEL_LED_PIN);
+  switchIsOn(ACTIVE_STANDBY_PIN) ? turnOnLED(YEL_LED_PIN) : turnOffLED(YEL_LED_PIN);
 }
 
 // Standby mode sleeps radio module
