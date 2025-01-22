@@ -19,4 +19,7 @@ void activeMode();
 // Function to repackage legacy packets
 void repackLegacy();
 
+// Function to determine if packet recieved is driver or mesh
+bool isMeshPacket();
+
 #endif

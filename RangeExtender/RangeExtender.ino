@@ -18,7 +18,7 @@ const uint8_t Beacon4 = 5;
 
 // Packet info
 const uint8_t MyAddress = Beacon2; // NOTE: Change the address based on the PLB address
-byte message[PACKET_SIZE_BYTES];
+byte packet[PACKET_SIZE_BYTES];
 
 
 void setup() {
@@ -60,9 +60,39 @@ void standbyMode() {
 * If the packet is legacy, repackage it as mesh and send it.
 */
 void activeMode() {
-  // Implement active mode. Reference base station code for legacy vs mesh differentiation
+  if (manager.waitAvailableTimeout(1)) {
+    uint8_t len = sizeof(packet);
+    if (isMeshPacket()) {
+      uint8_t from;
+      if (!manager.recvfromAck((uint8_t *)packet, &len, &from)) {
+        serialLog("Mesh packet autorouted");
+      }
+    }
+
+    else {
+      if (driver.recv((uint8_t *)packet, &len)) {
+        serialLog("Legacy packet recieved.\n");
+        serialLogPacketBin(packet, len);
+        serialLogPacketRead(packet, len);
+        serialLog("Repacking and sending...");
+        repackLegacy();
+      }
+    }
+  }
 }
 
+// Function to repack legacy packets and send them to basestation.
 void repackLegacy() {
-  // TODO: implement function to repack legacy packets
+  if (manager.sendtoWait(packet, sizeof(packet), Basestation) == RH_ROUTER_ERROR_NONE) {
+    serialLog("Legacy packet successfully repackaged and sent to basestation");
+  }
+
+  else {
+    serialLog("Legacy packet failed to be repackaged and sent to basestation");
+  }
+}
+
+bool isMeshPacket() {
+  // A header value of 255 indicates that the packet is legacy.
+  return (driver.headerFrom() != 255) ? true : false;
 }

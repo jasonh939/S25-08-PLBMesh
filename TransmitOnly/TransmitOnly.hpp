@@ -40,6 +40,6 @@ void handleACK();
 void handleIdle();
 
 // Function to encode message
-void encodeMessage();
+void encodePacket();
 
 #endif

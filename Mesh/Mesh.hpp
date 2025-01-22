@@ -43,7 +43,7 @@ void handleACK();
 void handleIdle();
 
 // Function to encode message
-void encodeMessage();
+void encodePacket();
 
 // Function to repackage legacy packets
 void repackLegacy();

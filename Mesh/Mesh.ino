@@ -10,6 +10,12 @@
 #include "IO/IO.hpp"
 #include "Debug.hpp"
 
+// Battery constants
+#define VBATPIN A7 
+// TODO: might need to change threshold values if we switch batteries
+#define BATTERY_MIN_THRESHOLD 134
+#define BATTERY_MAX_THRESHOLD 511
+
 #define SIMULATE_PACKET true
 #define NOISE_SEED_PIN A4
 
@@ -23,8 +29,8 @@ const uint8_t Beacon4 = 5;
 
 // Packet info
 const uint8_t MyAddress = Beacon4; // NOTE: Change the address based on the PLB address
-byte message[PACKET_SIZE_BYTES];
-int16_t messageID = 0;
+byte packet[PACKET_SIZE_BYTES];
+int16_t packetID = 0;
 
 // Active mode state
 Active_State currState = TRANSMIT;
@@ -117,14 +123,14 @@ void activeMode() {
 void handleTransmit() {
   serialLog("Transmit State");
   serialLog("");
-  encodeMessage();
-  serialLogPacketBin(message, PACKET_SIZE_BYTES);
-  serialLogPacketRead(message, PACKET_SIZE_BYTES);
+  encodePacket();
+  serialLogPacketBin(packet, PACKET_SIZE_BYTES);
+  serialLogPacketRead(packet, PACKET_SIZE_BYTES);
   serialLog("");
 
   // senttoWait is slightly blocking
   serialLog("Sending packet...");
-  if (manager.sendtoWait((uint8_t *)message, PACKET_SIZE_BYTES, Basestation) == RH_ROUTER_ERROR_NONE) {
+  if (manager.sendtoWait((uint8_t *)packet, PACKET_SIZE_BYTES, Basestation) == RH_ROUTER_ERROR_NONE) {
     serialLog("Packet successfully sent\n");
     turnOnLED(GRE_LED_PIN);
     delay(10);
@@ -198,13 +204,13 @@ void handleIdle() {
   currState = TRANSMIT;
 }
 
-// Function to encode the packet. Return of true indicates all packets are valid.
-void encodeMessage() {
+// Function to encode the packet.
+void encodePacket() {
   /*
   NEW packet structure:
   - 8 bit radio ID
   - 1 bit panic state
-  - 15 bit message ID
+  - 15 bit packet ID
   - 32 bit latitude
   - 32 bit longitude
   - 8 bit battery life
@@ -237,52 +243,52 @@ void encodeMessage() {
       serialLog("System clock has not been set");   
     }
 
-    // TODO: Implement battery reading. Old group code doesn't work becuase pin A7 is not recognized.
+    // NOTE: battery percent is unverified if accurate (currently seems inaccurate with current min and max thresholds)
+    long batteryReading = analogRead(VBATPIN);
+    batteryPercent = map(batteryReading, BATTERY_MIN_THRESHOLD, BATTERY_MAX_THRESHOLD, 0, 100);
+    batteryPercent = max(batteryPercent, 0);
+    batteryPercent = min(batteryPercent, 100);
   }
 
   // encode radio ID
   for (int i = sizeof(MyAddress)-1; i>=0; i--)
   {
     // MSB is to determine if packet is legacy (0) or new (1)
-    message[byteIndex] = ((uint8_t*)&MyAddress)[i] | 0b10000000;
+    packet[byteIndex] = ((uint8_t*)&MyAddress)[i] | 0b10000000;
     byteIndex++;
   }
 
-  // encode panicState and messageID
-  uint16_t panicMask = messageID | (switchIsOn(PANIC_SWITCH_PIN) ? 0x8000 : 0x0000);
-  for (int i = sizeof(messageID)-1; i>=0; i--) {
-    message[byteIndex] = ((uint8_t*)&panicMask)[i];
+  // encode panicState and packetID
+  uint16_t panicMask = packetID | (switchIsOn(PANIC_SWITCH_PIN) ? 0x8000 : 0x0000);
+  for (int i = sizeof(packetID)-1; i>=0; i--) {
+    packet[byteIndex] = ((uint8_t*)&panicMask)[i];
     byteIndex++;
   } 
 
   // encode gpsLat
   for (int i = sizeof(gpsLat)-1; i>=0; i--)
   {
-    message[byteIndex] = ((uint8_t*)&gpsLat)[i];
+    packet[byteIndex] = ((uint8_t*)&gpsLat)[i];
     byteIndex++;
   }
 
   // encode gpsLong
   for (int i = sizeof(gpsLng)-1; i>=0; i--)
   {
-    message[byteIndex] = ((uint8_t*)&gpsLng)[i];
+    packet[byteIndex] = ((uint8_t*)&gpsLng)[i];
     byteIndex++;
   }
 
   // encode batteryPercent
-  message[byteIndex] = batteryPercent;
+  packet[byteIndex] = batteryPercent;
   byteIndex++;
 
   // encode utc
   for (int i = sizeof(utc)-1; i>=0; i--)
   {
-    message[byteIndex] = ((uint8_t*)&utc)[i];
+    packet[byteIndex] = ((uint8_t*)&utc)[i];
     byteIndex++;
   }
 
-  messageID++;
-}
-
-void repackLegacy() {
-// TODO: repack legacy packets to mesh packet
+  packetID++;
 }
