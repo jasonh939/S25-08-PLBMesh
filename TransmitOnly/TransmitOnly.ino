@@ -20,7 +20,8 @@
 #define NOISE_SEED_PIN A4
 
 // Address of basestation as well as all the PLBs
-const uint8_t Basestation = 1;
+const uint8_t Basestation = 0;
+const uint8_t LegacyBeacon = 1;
 const uint8_t Beacon1 = 2;
 const uint8_t Beacon2 = 3;
 const uint8_t Beacon3 = 4;

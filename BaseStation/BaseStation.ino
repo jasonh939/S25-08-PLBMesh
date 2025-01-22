@@ -14,7 +14,7 @@
 #include "Debug.hpp"
 
 // Radio configurations
-const uint16_t MyAddress = 1;
+const uint16_t MyAddress = 0;
 byte recPacket[RH_MESH_MAX_MESSAGE_LEN];
 byte ackPacket[ACK_SIZE_BYTES];
 
@@ -61,7 +61,7 @@ void loop() {
     else {
       // TODO: implement recieving old packet
       if (driver.recv((uint8_t *)recPacket, &len)) {
-        serialLog("Legacy packet recieved.");
+        serialLog("Legacy packet recieved.\n");
         serialLogPacketBin(recPacket, len);
         serialLogPacketRead(recPacket, len);
       }
