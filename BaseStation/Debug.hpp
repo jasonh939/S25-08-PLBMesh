@@ -119,6 +119,7 @@ void serialLogPacketRead(byte packet[], int size) {
       radioID = ((packet[byteIndex] & 0b01111111) << 8) | packet[byteIndex + 1];
       byteIndex += 2;
 
+      panic = (packet[byteIndex] & 0b10000000) ? true : false;
       msgID = packet[byteIndex];
       byteIndex++;     
     }
