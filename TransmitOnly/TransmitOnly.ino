@@ -215,7 +215,7 @@ void encodePacket() {
   float gpsLat = 0.;
   float gpsLng = 0.;
   uint8_t batteryPercent = 0;
-  uint32_t utc = now();
+  uint32_t utc = 0;
 
   if (!SIMULATE_PACKET) {
     if (gps.location.isValid()) {

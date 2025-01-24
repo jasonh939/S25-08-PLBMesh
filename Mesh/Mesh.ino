@@ -170,7 +170,7 @@ void handleACK() {
       serialLog("ACK recieved");
       serialLogPacketBin(ackPacket, ACK_SIZE_BYTES);
       serialLog("");
-      currState = IDLE;
+      currState = RANGE_EXTENDER;
       return;
     }
   }
@@ -181,9 +181,40 @@ void handleACK() {
 
 
 // Range extends incoming packets. Mesh packets are auto routed while legacy packets are repackaged as mesh then sent.
+// The GPS position is also updated in this function when there are no incoming packets.
 void handleRangeExtender() {
   serialLog("Range-Extender State");
-  currState = IDLE;
+  unsigned long start = millis();
+  uint16_t waitTime = random(RANGE_EXT_INTERVAL - RANGE_EXT_VARIANCE, RANGE_EXT_INTERVAL + RANGE_EXT_VARIANCE);
+  while ((millis() - start) < waitTime) {
+    updateLEDs();
+    if (switchIsOn(ACTIVE_STANDBY_PIN)) {
+      serialLog("Standby detected, early range-extending exit.");
+      return;     
+    }
+    if (manager.waitAvailableTimeout(1)) {
+      uint8_t len = sizeof(packet);
+      if (isMeshPacket()) {
+        uint8_t from;
+        if (!manager.recvfromAck((uint8_t *)packet, &len, &from)) {
+          serialLog("Mesh packet autorouted");
+        }
+      }
+
+      else {
+        if (driver.recv((uint8_t *)packet, &len)) {
+          serialLog("Legacy packet recieved.\n");
+          serialLogPacketBin(packet, len);
+          serialLogPacketRead(packet, len);
+          serialLog("Repacking and sending...");
+          repackLegacy();
+        }
+      }
+    }
+    updateGPS();
+  }
+  currState = TRANSMIT;
+
 }
 
 // Downtime between ACK and next packet transmit. Keeps a GPS lock
@@ -224,7 +255,7 @@ void encodePacket() {
   float gpsLat = 0.;
   float gpsLng = 0.;
   uint8_t batteryPercent = 0;
-  uint32_t utc = now();
+  uint32_t utc = 0;
 
   if (!SIMULATE_PACKET) {
     if (gps.location.isValid()) {
@@ -291,4 +322,20 @@ void encodePacket() {
   }
 
   packetID++;
+}
+
+// Function to repack legacy packets and send them to basestation.
+void repackLegacy() {
+  if (manager.sendtoWait(packet, sizeof(packet), Basestation) == RH_ROUTER_ERROR_NONE) {
+    serialLog("Legacy packet successfully repackaged and sent to basestation");
+  }
+
+  else {
+    serialLog("Legacy packet failed to be repackaged and sent to basestation");
+  }
+}
+
+bool isMeshPacket() {
+  // A header value of 255 indicates that the packet is legacy.
+  return (driver.headerFrom() != 255) ? true : false;
 }

@@ -121,7 +121,7 @@ void serialLogPacketRead(byte packet[], int size) {
 
       panic = (packet[byteIndex] & 0b10000000) ? true : false;
       msgID = packet[byteIndex] & 0b01111111;
-      byteIndex++;
+      byteIndex++;     
     }
 
     else {
