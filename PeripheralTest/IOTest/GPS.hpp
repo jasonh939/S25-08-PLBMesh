@@ -8,24 +8,28 @@
 
 // Includes
 #include <TinyGPS++.h>
+#include <TimeLib.h>
 #include "LED.hpp"
 
 #define GPS_BAUD 38400 // This baud rate is variable depending on the GPS module
+#define GPS_INTERVAL 1000
+#define GPS_TIME_ALLOWABLE_AGE 500  // how old (in ms) the GPS time is allowed to be when syncing with the system clock
 
 TinyGPSPlus gps;
 
-// Waits for a GPS lock
-void waitForLock() {
-  while (!gps.location.isValid()) {
-    while (Serial1.available() > 0)
-    {
-      gps.encode(Serial1.read());
+// Updates the GPS data.
+// Also syncs arduino system time on a successful gps encode.
+void updateGPS()
+{
+  //get data from GPS
+  while (Serial1.available() > 0)
+  {
+    if (gps.encode(Serial1.read())) {
+      if (gps.time.age() < GPS_TIME_ALLOWABLE_AGE) {
+        setTime(gps.time.hour(), gps.time.minute(), gps.time.second(), gps.date.day(), gps.date.month(), gps.date.year());
+      }
     }
-    toggleLED(LED_BUILTIN);
-    delay(1000);
   }
-
-  turnOffLED(LED_BUILTIN);
 }
 
 /*
@@ -35,7 +39,7 @@ void waitForLock() {
 */
 void initGPS() {
   Serial1.begin(GPS_BAUD);
-  waitForLock();
+  while(!Serial1) {}
 }
 
 #endif
