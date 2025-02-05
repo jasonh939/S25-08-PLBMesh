@@ -18,7 +18,7 @@
 
 // Radio configuration
 const float Frequency = 915.0;
-const int8_t TxPower = 7;
+const int8_t TxPower = 1; // Use 1 for testing mesh, use 7 for testing range
 
 // Singletons
 RH_RF95 driver(RFM95_CS, RFM95_INT);

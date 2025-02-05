@@ -22,6 +22,7 @@ void setup() {
   // put your setup code here, to run once:
   initDebug(true); // Set argument to false when using python script
 
+  serialLog("BASESTATION");
   serialLog("Setting up IO...");
   initIO();
   serialLog("IO setup complete");
