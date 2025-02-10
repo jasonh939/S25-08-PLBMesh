@@ -239,7 +239,8 @@ void handleIdle() {
 void encodePacket() {
   /*
   NEW packet structure:
-  - 8 bit radio ID
+  - MSB = 1 indicating new packet
+  - 7 bit radio ID
   - 1 bit panic state
   - 15 bit packet ID
   - 32 bit latitude
