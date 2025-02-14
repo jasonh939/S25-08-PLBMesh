@@ -20,7 +20,9 @@ byte ackPacket[ACK_SIZE_BYTES];
 
 void setup() {
   // put your setup code here, to run once:
-  initDebug(true); // Set argument to false when using python script
+  initDebug(false); // Set argument to false when using python script
+  Console.begin(DEBUG_BAUD);
+  while (!Console) {} 
 
   serialLog("BASESTATION");
   serialLog("Setting up IO...");
@@ -74,6 +76,8 @@ void loop() {
         turnOffLED(YEL_LED_PIN); 
       }
     }
+
+    Console.write(recPacket, 17);
 	}
 
   else {
