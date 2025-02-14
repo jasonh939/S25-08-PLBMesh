@@ -17,7 +17,7 @@ import folium
 
 SERIAL_PORT = 'COM7'  # This should be changed to match Arduino serial port
 BAUD_RATE = 9600
-PACKET_SIZE = 16
+PACKET_SIZE = 17
 
 class PacketLengthError(Exception):
     """Creates a new error to throw if the packet is not the right length"""
@@ -95,6 +95,9 @@ class MapManager(QtCore.QObject):
 
     def decode(self, received_data: bytes):
         """Decodes the data packet from Arduino"""
+        binary_representation = ' '.join(format(byte, '08b') for byte in received_data)
+        print(received_data)
+        print(binary_representation)
         if (packet_length := len(received_data)) != PACKET_SIZE:
             raise PacketLengthError(
                 f"Expected packet length of {PACKET_SIZE} bytes. Received {packet_length} bytes"
@@ -113,8 +116,8 @@ class MapManager(QtCore.QObject):
 
         if is_meshpkt:
             # New Mesh Packet: 8-bit radio ID
-            radio_id, message_byte, latitude, longitude, unix_time = struct.unpack(
-                "!BhffxI", received_data 
+            radio_id, message_byte, latitude, longitude, battery_life, unix_time = struct.unpack(
+                "<xBhffBI", received_data 
             )
             # Mesh Packet: 15-bit message ID
             message_id = message_byte & 0x7FFF  # 0111 1111 1111 1111
@@ -122,14 +125,13 @@ class MapManager(QtCore.QObject):
             
         else:
             # Legacy Packet: 16-bit radio ID
-            radio_id, message_byte, latitude, longitude, unix_time = struct.unpack(
-                "!HbffxI", received_data 
+            radio_id, message_byte, latitude, longitude, battery_life, unix_time = struct.unpack(
+                "<xHbffBI", received_data 
             )
             # Legacy Packet: 7-bit message ID
             message_id = message_byte & 0x7F  # 0111 1111
             panic_state = bool(message_byte & 0x80)  # Check MSB of message_byte
         
-        battery_life = received_data[11]
         utc_time = datetime.fromtimestamp(unix_time, UTC).strftime("%m-%d-%Y %H:%M:%S")
         
         return (radio_id, message_id, panic_state, latitude, longitude,

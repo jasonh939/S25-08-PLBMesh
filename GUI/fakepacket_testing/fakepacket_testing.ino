@@ -134,7 +134,7 @@ void loop() {
     float latitude = randomFloat(37.0, 38.0);
     float longitude = randomFloat(-81.0, -80.0);
     uint8_t batteryLife = random(101); // 0-100%
-    uint32_t utcTime = random(0xFFFFFFFF); // Random timestamp
+    uint32_t utcTime = random(); // Random timestamp
     
     // Generate and send packet
     packetGen.generatePacket(
@@ -148,7 +148,7 @@ void loop() {
     );
     
      // Send the byte array over serial
-    Serial.write(packetGen.getRawPacket(), 16);  
+    Serial.write(packetGen.getRawPacket(), 17);
 
     Serial.flush();
 
