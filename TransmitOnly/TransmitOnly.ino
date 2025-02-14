@@ -12,9 +12,9 @@
 
 // Battery constants
 #define VBATPIN A7 
-// TODO: might need to change threshold values if we switch batteries
-#define BATTERY_MIN_THRESHOLD 134
-#define BATTERY_MAX_THRESHOLD 511
+// Voltage thresholds are calculated using information from: https://learn.adafruit.com/adafruit-feather-m0-adalogger/power-management
+#define BATTERY_MIN_THRESHOLD 465 // 3.0 Volts (100%)
+#define BATTERY_MAX_THRESHOLD 620 // 4.0 Volts (0%)
 
 #define SIMULATE_PACKET true
 #define NOISE_SEED_PIN A4
@@ -234,23 +234,17 @@ void encodePacket() {
     else {
       serialLog("System clock has not been set");   
     }
-
-    // NOTE: battery percent is unverified if accurate (currently seems inaccurate with current min and max thresholds)
-    /*
-    long batteryReading = analogRead(VBATPIN);
-    batteryPercent = map(batteryReading, BATTERY_MIN_THRESHOLD, BATTERY_MAX_THRESHOLD, 0, 100);
-    batteryPercent = max(batteryPercent, 0);
-    batteryPercent = min(batteryPercent, 100);
-    */
   }
 
-  float measuredvbat = analogRead(VBATPIN);
-  serialLogDouble("VBat analog read: ", measuredvbat); 
-  measuredvbat *= 2;    // we divided by 2, so multiply back
-  measuredvbat *= 3.3;  // Multiply by 3.3V, our reference voltage
-  measuredvbat /= 1024; // convert to voltage
-  batteryPercent = (measuredvbat/3.7) * 100;
-  serialLogDouble("VBat: ", measuredvbat); 
+  // Read battery percentage and trim overflows
+  long batteryReading = analogRead(VBATPIN);
+  float batteryVoltage = batteryReading * 2 * 3.3 / 1024;
+  serialLogInteger("VBAT ADC Reading: ", batteryReading);
+  serialLogDouble("Battery Voltage: ", batteryVoltage);
+  serialLog("");
+  batteryPercent = map(batteryReading, BATTERY_MIN_THRESHOLD, BATTERY_MAX_THRESHOLD, 0, 100);
+  batteryPercent = max(batteryPercent, 0);
+  batteryPercent = min(batteryPercent, 100);
 
   // encode radio ID
   for (int i = sizeof(MyAddress)-1; i>=0; i--)
