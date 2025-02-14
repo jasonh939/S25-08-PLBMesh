@@ -15,7 +15,7 @@ import serial
 from PyQt5 import QtCore, QtWebEngineWidgets, QtWidgets
 import folium
 
-SERIAL_PORT = 'COM6'  # This should be changed to match Arduino serial port
+SERIAL_PORT = 'COM7'  # This should be changed to match Arduino serial port
 BAUD_RATE = 9600
 PACKET_SIZE = 16
 
@@ -114,7 +114,7 @@ class MapManager(QtCore.QObject):
         if is_meshpkt:
             # New Mesh Packet: 8-bit radio ID
             radio_id, message_byte, latitude, longitude, unix_time = struct.unpack(
-                "<BhffxI", received_data 
+                "!BhffxI", received_data 
             )
             # Mesh Packet: 15-bit message ID
             message_id = message_byte & 0x7FFF  # 0111 1111 1111 1111
@@ -123,7 +123,7 @@ class MapManager(QtCore.QObject):
         else:
             # Legacy Packet: 16-bit radio ID
             radio_id, message_byte, latitude, longitude, unix_time = struct.unpack(
-                "<HbffxI", received_data 
+                "!HbffxI", received_data 
             )
             # Legacy Packet: 7-bit message ID
             message_id = message_byte & 0x7F  # 0111 1111
