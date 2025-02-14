@@ -77,7 +77,7 @@ void loop() {
       }
     }
 
-    Console.write(recPacket, 17);
+    Console.print((char *)recPacket);
 	}
 
   else {
