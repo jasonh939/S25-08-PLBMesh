@@ -236,11 +236,21 @@ void encodePacket() {
     }
 
     // NOTE: battery percent is unverified if accurate (currently seems inaccurate with current min and max thresholds)
+    /*
     long batteryReading = analogRead(VBATPIN);
     batteryPercent = map(batteryReading, BATTERY_MIN_THRESHOLD, BATTERY_MAX_THRESHOLD, 0, 100);
     batteryPercent = max(batteryPercent, 0);
     batteryPercent = min(batteryPercent, 100);
+    */
   }
+
+  float measuredvbat = analogRead(VBATPIN);
+  serialLogDouble("VBat analog read: ", measuredvbat); 
+  measuredvbat *= 2;    // we divided by 2, so multiply back
+  measuredvbat *= 3.3;  // Multiply by 3.3V, our reference voltage
+  measuredvbat /= 1024; // convert to voltage
+  batteryPercent = (measuredvbat/3.7) * 100;
+  serialLogDouble("VBat: ", measuredvbat); 
 
   // encode radio ID
   for (int i = sizeof(MyAddress)-1; i>=0; i--)
