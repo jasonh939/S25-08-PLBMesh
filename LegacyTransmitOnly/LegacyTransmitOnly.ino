@@ -29,7 +29,7 @@
 #define GPS_TIME_ALLOWABLE_AGE 500  // how old (in ms) the GPS time is allowed to be when syncing with the system clock
 
 #define DEBUG_BAUD 9600
-#define GPS_BAUD 9600 
+#define GPS_BAUD 38400
 #define SERIAL_DEBUG true           // whether to display debugging info on the USB Serial
 #define DEBUG_START_DELAY_SEC 10    // starting delay to allow the USB Serial to be connected before running (a low number may miss some information)
 
