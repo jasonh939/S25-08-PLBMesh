@@ -46,9 +46,7 @@ class MapManager(QtCore.QObject):
         """Main exec loop for the worker"""
         try:
             while True:
-                if self.serial_port.in_waiting == 2:                    # Disards the "\r\n" from the serial
-                    self.serial_port.reset_input_buffer()
-                if self.serial_port.in_waiting == PACKET_SIZE:          # Anytime there is a packet to read
+                if self.serial_port.in_waiting >= PACKET_SIZE:          # Anytime there is a packet to read
                     data = self.serial_port.readline(PACKET_SIZE)
                     try:
                         self.add_point(self.decode(data))               # Decode packet and add point to map
