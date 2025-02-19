@@ -15,9 +15,9 @@ import serial
 from PyQt5 import QtCore, QtWebEngineWidgets, QtWidgets
 import folium
 
-SERIAL_PORT = 'COM7'  # This should be changed to match Arduino serial port
+SERIAL_PORT = 'COM10'  # This should be changed to match Arduino serial port
 BAUD_RATE = 9600
-PACKET_SIZE = 17
+PACKET_SIZE = 16
 
 class PacketLengthError(Exception):
     """Creates a new error to throw if the packet is not the right length"""
@@ -46,8 +46,10 @@ class MapManager(QtCore.QObject):
         """Main exec loop for the worker"""
         try:
             while True:
-                if self.serial_port.in_waiting >= PACKET_SIZE:          # Anytime there is a packet to read
-                    data = self.serial_port.read(PACKET_SIZE)
+                if self.serial_port.in_waiting == 2:                    # Disards the "\r\n" from the serial
+                    self.serial_port.reset_input_buffer()
+                if self.serial_port.in_waiting == PACKET_SIZE:          # Anytime there is a packet to read
+                    data = self.serial_port.readline(PACKET_SIZE)
                     try:
                         self.add_point(self.decode(data))               # Decode packet and add point to map
                         self.htmlChanged.emit(self.load_HTML())
@@ -117,8 +119,9 @@ class MapManager(QtCore.QObject):
         if is_meshpkt:
             # New Mesh Packet: 8-bit radio ID
             radio_id, message_byte, latitude, longitude, battery_life, unix_time = struct.unpack(
-                "<xBhffBI", received_data 
+                "!BhffBI", received_data 
             )
+            radio_id = radio_id & 0x7F # Remove MSB 1
             # Mesh Packet: 15-bit message ID
             message_id = message_byte & 0x7FFF  # 0111 1111 1111 1111
             panic_state = bool(message_byte & 0x8000)  # Check MSB of message_byte
@@ -126,7 +129,7 @@ class MapManager(QtCore.QObject):
         else:
             # Legacy Packet: 16-bit radio ID
             radio_id, message_byte, latitude, longitude, battery_life, unix_time = struct.unpack(
-                "<xHbffBI", received_data 
+                "!HbffBI", received_data 
             )
             # Legacy Packet: 7-bit message ID
             message_id = message_byte & 0x7F  # 0111 1111

@@ -20,7 +20,7 @@ byte ackPacket[ACK_SIZE_BYTES];
 
 void setup() {
   // put your setup code here, to run once:
-  initDebug(true); // Set argument to false when using python script
+  initDebug(false); // Set argument to false when using python script
   Console.begin(DEBUG_BAUD);
   while (!Console) {} 
 
@@ -77,7 +77,10 @@ void loop() {
       }
     }
 
-    // Console.print((char *)recPacket);
+    if (!SerialDebug) {
+      Console.write(recPacket, 16);
+      Console.flush();
+    }
 	}
 
   else {
