@@ -19,6 +19,10 @@ SERIAL_PORT = 'COM10'  # This should be changed to match Arduino serial port
 BAUD_RATE = 9600
 PACKET_SIZE = 16
 
+MAX_RADIO_ID = 16
+lngMin, lngMax = -180., 180.
+latMin, latMax = -90., 90.
+
 class PacketLengthError(Exception):
     """Creates a new error to throw if the packet is not the right length"""
     pass
@@ -47,10 +51,14 @@ class MapManager(QtCore.QObject):
         try:
             while True:
                 if self.serial_port.in_waiting >= PACKET_SIZE:          # Anytime there is a packet to read
-                    data = self.serial_port.readline(PACKET_SIZE)
+                    data = self.serial_port.read(PACKET_SIZE + 2)       # + 2 takes in the "\r\n" which will be trimmed
+                    if len(data) == PACKET_SIZE + 2:
+                        data = data[2:]
                     try:
-                        self.add_point(self.decode(data))               # Decode packet and add point to map
-                        self.htmlChanged.emit(self.load_HTML())
+                        decodedData = self.decode(data)
+                        if (self.isValidGPS(decodedData[3], decodedData[4]) and decodedData[0] <= MAX_RADIO_ID): # Checks for various invalid packets
+                            self.add_point(decodedData)                 # Decode packet and add point to map
+                            self.htmlChanged.emit(self.load_HTML())     # Reload the html map
                     except PacketLengthError as err:
                         print(f"Error: {err}", file=sys.stderr)
         except serial.SerialException as err:
@@ -137,6 +145,10 @@ class MapManager(QtCore.QObject):
         
         return (radio_id, message_id, panic_state, latitude, longitude,
                 battery_life, utc_time)
+
+    def isValidGPS(self, latitude: float, longitude: float):
+        valid = lngMin <= longitude <= lngMax and latMin <= latitude <= latMax
+        return valid
 
 class BaseStationGUI(QtWidgets.QWidget):
     """Main GUI class that connects to base station via serial port"""
