@@ -15,7 +15,7 @@ import serial
 from PyQt5 import QtCore, QtWebEngineWidgets, QtWidgets
 import folium
 
-SERIAL_PORT = 'COM10'  # This should be changed to match Arduino serial port
+SERIAL_PORT = 'COM8'  # This should be changed to match Arduino serial port
 BAUD_RATE = 9600
 PACKET_SIZE = 16
 
@@ -41,6 +41,7 @@ class MapManager(QtCore.QObject):
             print(f"Error opening serial port: {err}", file=sys.stderr)
             raise
             
+        self.points_db = {}    
         self.map = folium.Map(location=[37.227779, -80.422289], zoom_start=13)
         self.latitudes = []
         self.longitudes = []
@@ -57,8 +58,9 @@ class MapManager(QtCore.QObject):
                     try:
                         decodedData = self.decode(data)
                         if (self.isValidGPS(decodedData[3], decodedData[4]) and decodedData[0] <= MAX_RADIO_ID): # Checks for various invalid packets
-                            self.add_point(decodedData)                 # Decode packet and add point to map
-                            self.htmlChanged.emit(self.load_HTML())     # Reload the html map
+                            if self.check_point(decodedData):           # Check if point is a duplicate
+                                self.add_point(decodedData)                 # Decode packet and add point to map
+                                self.htmlChanged.emit(self.load_HTML())     # Reload the html map
                     except PacketLengthError as err:
                         print(f"Error: {err}", file=sys.stderr)
         except serial.SerialException as err:
@@ -100,6 +102,22 @@ class MapManager(QtCore.QObject):
         southwest_point = (min(self.latitudes) - 0.01, min(self.longitudes) - 0.01)
         northeast_point = (max(self.latitudes) + 0.01, max(self.longitudes) + 0.01)
         self.map.fit_bounds((southwest_point, northeast_point))
+
+    def check_point(self, packet):
+        """Checks packet data against internal database to see if it is a duplicate"""
+        (radio_id, message_id, panic_state, latitude, longitude, 
+         battery_life, utc_time) = packet
+
+        if radio_id in self.points_db:
+            if self.points_db[radio_id] == packet:
+                return False
+            else:
+                self.points_db[radio_id] = packet
+                return True
+        else:
+            self.points_db[radio_id] = packet
+            return True
+
 
     def decode(self, received_data: bytes):
         """Decodes the data packet from Arduino"""
