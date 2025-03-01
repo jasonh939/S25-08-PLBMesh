@@ -13,7 +13,7 @@
 // Time intervals for various timers
 #define GPS_INTERVAL 1000
 #define ACK_INTERVAL 5000
-#define IDLE_INTERVAL 5000
+#define IDLE_INTERVAL 15000
 #define IDLE_VARIANCE 1000
 
 // Enumerator for active mode states

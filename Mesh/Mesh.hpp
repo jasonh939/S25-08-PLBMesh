@@ -13,7 +13,7 @@
 // Time intervals for various timers
 #define GPS_INTERVAL 1000
 #define ACK_INTERVAL 5000
-#define RANGE_EXT_INTERVAL 10000
+#define RANGE_EXT_INTERVAL 15000
 #define RANGE_EXT_VARIANCE 1000
 #define IDLE_INTERVAL 5000
 #define IDLE_VARIANCE 1000
