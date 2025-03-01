@@ -11,11 +11,13 @@ import struct
 import sys
 import threading
 import serial
+import os
+import json
 
 from PyQt5 import QtCore, QtWebEngineWidgets, QtWidgets
 import folium
 
-SERIAL_PORT = 'COM8'  # This should be changed to match Arduino serial port
+SERIAL_PORT = 'COM6'  # This should be changed to match Arduino serial port
 BAUD_RATE = 9600
 PACKET_SIZE = 16
 
@@ -43,9 +45,32 @@ class MapManager(QtCore.QObject):
             
         self.points_db = {}    
         self.map = folium.Map(location=[37.227779, -80.422289], zoom_start=13)
+        self.json_file = "beacon_data.json"
+        self.json_data = self.load_json()
         self.latitudes = []
         self.longitudes = []
         threading.Thread(target=self.exec, daemon=True).start()
+
+    def load_json(self):
+        """ Load JSON file or create one if it doesn't exist """
+        if os.path.exists(self.json_file):
+            try:
+                with open(self.json_file, 'r') as f:
+                    return json.load(f)
+            except json.JSONDecodeError:
+                print(f"Error reading {self.json_file}. Creating a new GeoJSON file.")
+        
+        # Create an empty GeoJSON structure if file doesn't exist or is invalid
+        return {
+            "type": "FeatureCollection",
+            "features": []
+        }
+    
+    def save_json(self):
+        """ Save any changes to JSON file"""
+        with open(self.json_file, 'w') as f:
+            json.dump(self.json_data, f, indent=4)
+
 
     def exec(self):
         """Main exec loop for the worker"""
@@ -57,10 +82,11 @@ class MapManager(QtCore.QObject):
                         data = data[2:]
                     try:
                         decodedData = self.decode(data)
+                        print("Checking if packet is valid...")
                         if (self.isValidGPS(decodedData[3], decodedData[4]) and decodedData[0] <= MAX_RADIO_ID): # Checks for various invalid packets
                             if self.check_point(decodedData):           # Check if point is a duplicate
-                                self.add_point(decodedData)                 # Decode packet and add point to map
-                                self.htmlChanged.emit(self.load_HTML())     # Reload the html map
+                                self.add_or_update_beacon(decodedData)                 # Add or update JSON file with point data
+                                self.htmlChanged.emit(self.update_map())     # Reload the html map
                     except PacketLengthError as err:
                         print(f"Error: {err}", file=sys.stderr)
         except serial.SerialException as err:
@@ -74,16 +100,37 @@ class MapManager(QtCore.QObject):
         data = io.BytesIO()
         self.map.save(data, close_file=False)
         return data.getvalue().decode()
+    
+    def update_map(self):
+        """ Update map with the current JSON data """
 
-    def add_point(self, point):
-        """Adds a point to the map"""
-        (radio_id, message_id, panic_state, latitude, longitude, 
-         battery_life, utc_time) = point
-        
-        self.latitudes.append(latitude)
-        self.longitudes.append(longitude)
-        
-        popup_string = (
+        # Create a new map
+        self.map = folium.Map(location=[37.227779, -80.422289], zoom_start=13)
+
+        # reset coordinate list
+        self.latitudes = []
+        self.longitudes = []
+
+        # Add each beacon to the map
+        for feature in self.json_data["features"]:
+            properties = feature["properties"]
+            coordinates = feature["geometry"]["coordinates"]
+
+            # Extract each data line
+            radio_id = properties["Radio ID"]     
+            message_id = properties["Message ID"]
+            panic_state = properties["Panic State"]
+            latitude = properties["Latitude"]
+            longitude = properties["Longitude"]
+            battery_life = properties["Battery Life"]
+            utc_time = properties["Time"]
+
+            # Add coordinates to member variables
+            self.latitudes.append(latitude)
+            self.longitudes.append(longitude)
+
+            # Create a marker for each beacon
+            popup_string = (
             f"Radio ID: {radio_id}<br>"
             f"Message ID: {message_id}<br>"
             f"Panic State: {panic_state}<br>"
@@ -91,22 +138,73 @@ class MapManager(QtCore.QObject):
             f"Longitude: {longitude:.4f}<br>"
             f"Battery Life: {battery_life:.1f}%<br>"
             f"Time: {utc_time} UTC"
-        )
+            )
+    
+            iframe = folium.IFrame(html=popup_string)
+            popup = folium.Popup(iframe, min_width=250, max_width=250)
+            folium.Marker(location=[latitude, longitude], popup=popup).add_to(self.map)
+
+
+        # Set map bounds for zoom
+        if self.latitudes and self.longitudes:
+            southwest_point = (min(self.latitudes) - 0.01, min(self.longitudes) - 0.01)
+            northeast_point = (max(self.latitudes) + 0.01, max(self.longitudes) + 0.01)
+            self.map.fit_bounds([southwest_point, northeast_point])
+
+        return self.load_HTML()
+
+    def add_or_update_beacon(self, point):
+        """
+        Add a new beacon or update an existing one in JSON file based on radio_id
+        """
+        (radio_id, message_id, panic_state, latitude, longitude, 
+         battery_life, utc_time) = point
         
-        print("\nPacket Received:\n{}".format(popup_string.replace("<br>", "\n")))
+        print(f"Adding or updating beacon with Radio ID: {radio_id}")
+
+        # Find if radio_id already exists in JSON file
+        beacon_index = -1
+        for i, feature in enumerate(self.json_data["features"]):
+            if feature["properties"].get("Radio ID") == radio_id:
+                beacon_index = i
+                break
         
-        iframe = folium.IFrame(popup_string)
-        popup = folium.Popup(iframe, min_width=250, max_width=250)
-        folium.Marker(location=(latitude, longitude), popup=popup).add_to(self.map)
+        # Create JSON feature for beacon
+        beacon_data = {
+            "type": "Feature",
+            "properties": {
+                "Radio ID": radio_id,
+                "Message ID": message_id,
+                "Panic State": panic_state,
+                "Latitude": latitude,
+                "Longitude": longitude,
+                "Battery Life": battery_life,
+                "Time": utc_time
+            },
+            "geometry": {
+                "type": "Point",
+                "coordinates": [longitude, latitude]  # JSON uses [long, lat] order
+            }
+        }
         
-        southwest_point = (min(self.latitudes) - 0.01, min(self.longitudes) - 0.01)
-        northeast_point = (max(self.latitudes) + 0.01, max(self.longitudes) + 0.01)
-        self.map.fit_bounds((southwest_point, northeast_point))
+        # Update existing beacon or add new one
+        if beacon_index >= 0:
+            self.json_data["features"][beacon_index] = beacon_data
+            print(f"Updated beacon with Radio ID: {radio_id}")
+        else:
+            self.json_data["features"].append(beacon_data)
+            print(f"Added new beacon with Radio ID: {radio_id}")
+        
+        # Save changes to file
+        self.save_json()
+
 
     def check_point(self, packet):
         """Checks packet data against internal database to see if it is a duplicate"""
         (radio_id, message_id, panic_state, latitude, longitude, 
          battery_life, utc_time) = packet
+        
+        print(f"Received packet from Radio ID: {radio_id}. Checking point now...")
 
         if radio_id in self.points_db:
             if self.points_db[radio_id] == packet:
