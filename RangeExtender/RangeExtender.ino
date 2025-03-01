@@ -22,7 +22,7 @@ byte packet[PACKET_SIZE_BYTES];
 
 
 void setup() {
-  initDebug(true); // NOTE: Set parameter to false if not using Arduino IDE. 
+  initDebug(false); // NOTE: Set parameter to false if not using Arduino IDE. 
 
   serialLog("RANGE-EXTENDER MODE");
   serialLog("Setting up IO...");

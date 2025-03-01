@@ -20,7 +20,7 @@ byte ackPacket[ACK_SIZE_BYTES];
 
 void setup() {
   // put your setup code here, to run once:
-  initDebug(true); // Set argument to false when using python script
+  initDebug(false); // Set argument to false when using python script
   Console.begin(DEBUG_BAUD);
   while (!Console) {} 
 
@@ -84,6 +84,11 @@ void loop() {
     turnOnLED(RED_LED_PIN);
     delay(10);
     turnOffLED(RED_LED_PIN);
+  }
+
+  if (!SerialDebug) {
+      Console.write(recPacket, 16);
+      Console.flush();
   }
 }
 
