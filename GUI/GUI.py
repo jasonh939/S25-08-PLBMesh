@@ -156,6 +156,7 @@ class MapManager(QtCore.QObject):
                         height: 30px;
                         border-radius: 50%;
                         background-color: {icon_color};
+                        display: flex;
                         justify-content: center;
                         align-items: center;
                         color: white;
