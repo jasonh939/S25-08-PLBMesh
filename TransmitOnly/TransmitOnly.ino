@@ -13,8 +13,8 @@
 // Battery constants
 #define VBATPIN A7 
 // Voltage thresholds are calculated using information from: https://learn.adafruit.com/adafruit-feather-m0-adalogger/power-management
-#define BATTERY_MIN_THRESHOLD 465 // 3.0 Volts (100%)
-#define BATTERY_MAX_THRESHOLD 620 // 4.0 Volts (0%)
+#define BATTERY_MIN_THRESHOLD 465 // 3.0 Volts (0%)
+#define BATTERY_MAX_THRESHOLD 652 // 4.0 Volts (100%)
 
 #define SIMULATE_PACKET false
 #define NOISE_SEED_PIN A4
