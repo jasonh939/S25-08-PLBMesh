@@ -16,7 +16,7 @@
 #define BATTERY_MIN_THRESHOLD 465 // 3.0 Volts (100%)
 #define BATTERY_MAX_THRESHOLD 620 // 4.0 Volts (0%)
 
-#define SIMULATE_PACKET false
+#define SIMULATE_PACKET true
 #define NOISE_SEED_PIN A4
 
 // Address of basestation as well as all the PLBs
@@ -36,7 +36,7 @@ int16_t packetID = 0;
 Active_State currState = TRANSMIT;
 
 void setup() {
-  initDebug(false); // NOTE: Set parameter to false if not using Arduino IDE. 
+  initDebug(true); // NOTE: Set parameter to false if not using Arduino IDE. 
 
   serialLog("MESH MODE");
   serialLog("Setting up IO...");
@@ -111,10 +111,6 @@ void activeMode() {
 
     case RANGE_EXTENDER:
       handleRangeExtender();
-      break;
-    
-    case IDLE:
-      handleIdle();
       break;
   }
 }
@@ -215,24 +211,6 @@ void handleRangeExtender() {
   }
   currState = TRANSMIT;
 
-}
-
-// Downtime between ACK and next packet transmit. Keeps a GPS lock
-// Early function exit if standby is pressed
-void handleIdle() {
-  serialLog("Idle State");
-  unsigned long start = millis();
-  uint16_t waitTime = random(IDLE_INTERVAL - IDLE_VARIANCE, IDLE_INTERVAL + IDLE_VARIANCE);
-  while ((millis() - start) < waitTime) {
-    updateLEDs();
-    if (switchIsOn(ACTIVE_STANDBY_PIN)) {
-      serialLog("Standby detected, early idle exit.");
-      return;
-    }
-    updateGPS();
-  }
-
-  currState = TRANSMIT;
 }
 
 // Function to encode the packet.

@@ -22,8 +22,7 @@
 enum _Active_State {
   TRANSMIT,
   ACK,
-  RANGE_EXTENDER,
-  IDLE
+  RANGE_EXTENDER
 };
 typedef enum _Active_State Active_State;
 
