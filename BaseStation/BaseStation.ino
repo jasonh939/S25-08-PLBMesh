@@ -77,18 +77,16 @@ void loop() {
       }
     }
 
-    // Console.print((char *)recPacket);
+    if (!SerialDebug) {
+      Console.write(recPacket, 16);
+      Console.flush();
+    }
 	}
 
   else {
     turnOnLED(RED_LED_PIN);
     delay(10);
     turnOffLED(RED_LED_PIN);
-  }
-
-  if (!SerialDebug) {
-      Console.write(recPacket, 16);
-      Console.flush();
   }
 }
 
