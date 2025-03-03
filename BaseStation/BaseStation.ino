@@ -77,10 +77,8 @@ void loop() {
       }
     }
 
-    if (!SerialDebug) {
-      Console.write(recPacket, 16);
-      Console.flush();
-    }
+ 
+ 
 	}
 
   else {

@@ -44,7 +44,7 @@ class MapManager(QtCore.QObject):
             raise
             
         self.points_db = {}    
-        self.map = folium.Map(location=[37.227779, -80.422289], zoom_start=13)
+        self.map = folium.Map(location=[37.227779, -80.422289], zoom_start=18)
         self.json_file = "beacon_data.json"
         self.json_data = self.load_json()
         self.latitudes = []
@@ -83,7 +83,7 @@ class MapManager(QtCore.QObject):
                     try:
                         decodedData = self.decode(data)
                         print("Checking if packet is valid...")
-                        if (self.isValidGPS(decodedData[3], decodedData[4]) and decodedData[0] <= MAX_RADIO_ID): # Checks for various invalid packets
+                        if (self.isValidGPS(decodedData[3], decodedData[4]) and 0 < decodedData[0] < MAX_RADIO_ID): # Checks for various invalid packets
                             if self.check_point(decodedData):           # Check if point is a duplicate
                                 self.add_or_update_beacon(decodedData)                 # Add or update JSON file with point data
                                 self.htmlChanged.emit(self.update_map())     # Reload the html map
@@ -105,7 +105,7 @@ class MapManager(QtCore.QObject):
         """ Update map with the current JSON data """
 
         # Create a new map
-        self.map = folium.Map(location=[37.227779, -80.422289], zoom_start=13)
+        self.map = folium.Map(location=[37.227779, -80.422289], zoom_start=18)
 
         # reset coordinate list
         self.latitudes = []
@@ -142,7 +142,39 @@ class MapManager(QtCore.QObject):
     
             iframe = folium.IFrame(html=popup_string)
             popup = folium.Popup(iframe, min_width=250, max_width=250)
-            folium.Marker(location=[latitude, longitude], popup=popup).add_to(self.map)
+
+            # set icon color based on panic mode state
+            icon_color = 'red' if panic_state else 'blue'
+
+            # set icon marker based on radio_id
+            icon = folium.DivIcon(
+                icon_size=(150, 36),
+                icon_anchor=(14, 40),
+                html=f'''
+                    <div style="
+                        width: 30px;
+                        height: 30px;
+                        border-radius: 50%;
+                        background-color: {icon_color};
+                        justify-content: center;
+                        align-items: center;
+                        color: white;
+                        font-size: 14px;
+                        font-weight: bold;
+                        border: 2px solid white;
+                    ">
+                        {radio_id}
+                    </div>
+                '''
+            )
+
+            # add custom marker to map
+
+            folium.Marker(
+                location=[latitude, longitude], 
+                popup=popup,
+                icon=icon
+            ).add_to(self.map)
 
 
         # Set map bounds for zoom
@@ -169,7 +201,7 @@ class MapManager(QtCore.QObject):
                 beacon_index = i
                 break
         
-        # Create JSON feature for beacon
+        # Create JSON feature for beacon point
         beacon_data = {
             "type": "Feature",
             "properties": {
@@ -187,7 +219,7 @@ class MapManager(QtCore.QObject):
             }
         }
         
-        # Update existing beacon or add new one
+        # Update existing beacon point or add a new point in JSON file
         if beacon_index >= 0:
             self.json_data["features"][beacon_index] = beacon_data
             print(f"Updated beacon with Radio ID: {radio_id}")
