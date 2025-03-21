@@ -17,7 +17,7 @@ import json
 from PyQt5 import QtCore, QtWebEngineWidgets, QtWidgets
 import folium
 
-SERIAL_PORT = 'COM6'  # This should be changed to match Arduino serial port
+SERIAL_PORT = 'COM8'  # This should be changed to match Arduino serial port
 BAUD_RATE = 9600
 PACKET_SIZE = 16
 
@@ -129,6 +129,20 @@ class MapManager(QtCore.QObject):
             self.latitudes.append(latitude)
             self.longitudes.append(longitude)
 
+            # Create tooltip HTML for hover information
+            tooltip_html = f"""
+            <div style="font-family: Arial; font-size: 12px; padding: 5px; width: 200px;">
+                <div style="font-weight: bold; margin-bottom: 3px;">Radio ID: {radio_id}</div>
+                <div>Message ID: {message_id}</div>
+                <div>Panic State: {'YES' if panic_state else 'NO'}</div>
+                <div>Battery: {battery_life:.1f}%</div>
+                <div>Time: {utc_time} UTC</div>
+            </div>
+            """
+            
+            # Create a tooltip that shows on hover
+            tooltip = folium.Tooltip(tooltip_html)
+
             # Create a marker for each beacon
             popup_string = (
             f"Radio ID: {radio_id}<br>"
@@ -150,6 +164,7 @@ class MapManager(QtCore.QObject):
             icon = folium.DivIcon(
                 icon_size=(150, 36),
                 icon_anchor=(14, 40),
+                popup_anchor=(1, -40)
                 html=f'''
                     <div style="
                         width: 30px;
@@ -174,14 +189,15 @@ class MapManager(QtCore.QObject):
             folium.Marker(
                 location=[latitude, longitude], 
                 popup=popup,
+                tooltip=tooltip,
                 icon=icon
             ).add_to(self.map)
 
 
         # Set map bounds for zoom
         if self.latitudes and self.longitudes:
-            southwest_point = (min(self.latitudes) - 0.01, min(self.longitudes) - 0.01)
-            northeast_point = (max(self.latitudes) + 0.01, max(self.longitudes) + 0.01)
+            southwest_point = (min(self.latitudes) - 0.0001, min(self.longitudes) - 0.0001)
+            northeast_point = (max(self.latitudes) + 0.0001, max(self.longitudes) + 0.0001)
             self.map.fit_bounds([southwest_point, northeast_point])
 
         return self.load_HTML()
