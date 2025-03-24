@@ -526,13 +526,19 @@ class BaseStationGUI(QtWidgets.QWidget):
         self.viewLabel.setText("View: Current Locations")
 
     def clearBeacons(self):
-        self.mapManager.live_data["features"] = []
-        self.mapManager.history_data["features"] = []
-        self.mapManager.save_json(self.mapManager.live_file, self.mapManager.live_data)
-        self.mapManager.save_json(self.mapManager.history_file, self.mapManager.history_data)
-        self.mapManager.points_db = {}
+        """Clear all beacons from the map"""
+        box = QtWidgets.QMessageBox()
+        box.setIcon(QtWidgets.QMessageBox.Warning)
+        box.setWindowTitle("WARNING")
+        box.setText("Are you sure you want to clear all beacons? This will erase all current beacon data.")
+        box.setStandardButtons(QtWidgets.QMessageBox.Yes | QtWidgets.QMessageBox.No)
 
-        self.forceMapUpdate()
+        if box.exec() == QtWidgets.QMessageBox.Yes:
+            self.mapManager.live_data["features"] = []
+            self.mapManager.history_data["features"] = []
+            self.mapManager.save_json(self.mapManager.live_file, self.mapManager.live_data)
+            self.mapManager.save_json(self.mapManager.history_file, self.mapManager.history_data)
+            self.forceMapUpdate()
 
 if __name__ == "__main__":
     app = QtWidgets.QApplication(sys.argv)
