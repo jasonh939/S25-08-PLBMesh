@@ -16,7 +16,7 @@
 #define BATTERY_MIN_THRESHOLD 465 // 3.0 Volts (0%)
 #define BATTERY_MAX_THRESHOLD 652 // 4.0 Volts (100%)
 
-#define SIMULATE_PACKET true
+#define SIMULATE_PACKET false
 #define NOISE_SEED_PIN A4
 
 // Address of basestation as well as all the PLBs
@@ -36,7 +36,7 @@ int16_t packetID = 0;
 Active_State currState = TRANSMIT;
 
 void setup() {
-  initDebug(true); // NOTE: Set parameter to false if not using Arduino IDE. 
+  initDebug(false); // NOTE: Set parameter to false if not using Arduino IDE. 
 
   serialLog("MESH MODE");
   serialLog("Setting up IO...");

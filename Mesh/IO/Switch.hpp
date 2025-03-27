@@ -22,8 +22,8 @@ bool switchIsOn(int SWITCH_PIN) {
 // Initializes and sets up the switches to use interrupts
 // Also sets the intial standby/active state and panic state
 void initSwitches() {
-  pinMode(ACTIVE_STANDBY_PIN, INPUT);
-  pinMode(PANIC_SWITCH_PIN, INPUT);
+  pinMode(ACTIVE_STANDBY_PIN, INPUT_PULLUP);
+  pinMode(PANIC_SWITCH_PIN, INPUT_PULLUP);
 }
 
 #endif
