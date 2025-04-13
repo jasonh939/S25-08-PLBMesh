@@ -1,0 +1,24 @@
+{
+    "type": "FeatureCollection",
+    "features": [
+        {
+            "type": "Feature",
+            "properties": {
+                "Radio ID": 5,
+                "Message ID": 5,
+                "Panic State": false,
+                "Latitude": 5.184804318001823e-44,
+                "Longitude": 0.0,
+                "Battery Life": 76,
+                "Time": "01-01-1970 04:40:07"
+            },
+            "geometry": {
+                "type": "Point",
+                "coordinates": [
+                    0.0,
+                    5.184804318001823e-44
+                ]
+            }
+        }
+    ]
+}
