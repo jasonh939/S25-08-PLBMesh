@@ -16,7 +16,7 @@
 #define BATTERY_MIN_THRESHOLD 465 // 3.0 Volts (0%)
 #define BATTERY_MAX_THRESHOLD 652 // 4.0 Volts (100%)
 
-#define SIMULATE_PACKET false
+#define SIMULATE_PACKET true
 #define NOISE_SEED_PIN A4
 
 // Address of basestation as well as all the PLBs
@@ -26,9 +26,10 @@ const uint8_t Beacon1 = 2;
 const uint8_t Beacon2 = 3;
 const uint8_t Beacon3 = 4;
 const uint8_t Beacon4 = 5;
+const uint8_t Beacon5 = 6;
 
 // Packet info
-const uint8_t MyAddress = Beacon3; // NOTE: Change the address based on the PLB address
+const uint8_t MyAddress = Beacon5; // NOTE: Change the address based on the PLB address
 byte packet[PACKET_SIZE_BYTES];
 int16_t packetID = 0;
 
@@ -36,7 +37,7 @@ int16_t packetID = 0;
 Active_State currState = TRANSMIT;
 
 void setup() {
-  initDebug(false); // NOTE: Set parameter to false if not using Arduino IDE. 
+  initDebug(true); // NOTE: Set parameter to false if not using Arduino IDE. 
 
   serialLog("TRANSMIT-ONLY MODE");
   serialLog("Setting up IO...");

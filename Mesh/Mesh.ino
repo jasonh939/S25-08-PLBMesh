@@ -231,8 +231,8 @@ void encodePacket() {
   int byteIndex = 0;
 
   // Default packet values. If gps data is invalid, they won't be updated.
-  float gpsLat = 0.;
-  float gpsLng = 0.;
+  float gpsLat = TEST_LAT_MIN + (random(0, 1000000) / 1000000.0) * (TEST_LAT_MAX - TEST_LAT_MIN);
+  float gpsLng = TEST_LNG_MIN + (random(0, 1000000) / 1000000.0) * (TEST_LNG_MAX - TEST_LNG_MIN);
   uint8_t batteryPercent = 0;
   uint32_t utc = 0;
 

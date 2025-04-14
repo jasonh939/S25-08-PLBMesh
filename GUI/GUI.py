@@ -17,7 +17,7 @@ import json
 from PyQt5 import QtCore, QtWebEngineWidgets, QtWidgets
 import folium
 
-SERIAL_PORT = 'COM6'  # This should be changed to match Arduino serial port
+SERIAL_PORT = 'COM10'  # This should be changed to match Arduino serial port
 BAUD_RATE = 9600
 PACKET_SIZE = 16
 

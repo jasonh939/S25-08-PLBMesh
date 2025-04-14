@@ -18,6 +18,12 @@
 #define IDLE_INTERVAL 5000
 #define IDLE_VARIANCE 1000
 
+// Testing lng and lat values
+#define TEST_LAT_MIN 37.22
+#define TEST_LAT_MAX 37.24
+#define TEST_LNG_MIN -80.43
+#define TEST_LNG_MAX -80.41
+
 // Enumerator for active mode states
 enum _Active_State {
   TRANSMIT,
