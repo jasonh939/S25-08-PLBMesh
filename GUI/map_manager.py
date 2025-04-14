@@ -9,7 +9,7 @@ import threading
 import serial
 import os
 import json
-import folium
+import folium 
 
 BAUD_RATE = 9600
 PACKET_SIZE = 16
@@ -163,32 +163,33 @@ class MapManager(QtCore.QObject):
 
             # Create the tooltip's HTML for hover event
             tooltip_html = f"""
-            <div style="font-family: Arial; font-size: 12px; padding: 5px; width: 200px;">
-                <div style="font-weight: bold; margin-bottom: 3px;">Radio ID: {radio_id}</div>
+            <div style="font-family: Arial; font-size: 20px; padding: 5px; width: 300px;">
+                <div>Radio ID: {radio_id}</div>
                 <div>Message ID: {message_id}</div>
                 <div>Panic State: {'YES' if panic_state else 'NO'}</div>
-                <div>Battery: {battery_life:.1f}%</div>
-                <div>Time: {utc_time} UTC</div>
+                <div>Latitude: {latitude:.5f}</div>
+                <div>Longitude: {longitude:.5f}</div>
             </div>
             """
             
             # Create a tooltip that shows on hover
             tooltip = folium.Tooltip(tooltip_html)
 
-            # Create popup string html for click event
-            popup_string = (
-            f"Radio ID: {radio_id}<br>"
-            f"Message ID: {message_id}<br>"
-            f"Panic State: {panic_state}<br>"
-            f"Latitude: {latitude:.5f}<br>"
-            f"Longitude: {longitude:.5f}<br>"
-            f"Battery Life: {battery_life:.1f}%<br>"
-            f"Time: {utc_time} UTC"
-            )
+            # Create popup's html for click event
+            popup_string = f"""
+            <div style="font-family: Arial; font-size: 26px; padding: 5px; width: 375px;">
+                <div>Radio ID: {radio_id}</div>
+                <div>Message ID: {message_id}</div>
+                <div>Panic State: {'YES' if panic_state else 'NO'}</div>
+                <div>Latitude: {latitude:.5f}</div>
+                <div>Longitude: {longitude:.5f}</div>
+                <div>Battery: {battery_life:.1f}%</div>
+                <div>Time: {utc_time} UTC</div>
+            """
     
             # Create a popup to contain the HTML string
             iframe = folium.IFrame(html=popup_string)
-            popup = folium.Popup(iframe, min_width=250, max_width=250)
+            popup = folium.Popup(iframe, min_width=450, max_width=400)
 
             # set icon color of marker based on panic mode state
             icon_color = 'red' if panic_state else 'blue'
